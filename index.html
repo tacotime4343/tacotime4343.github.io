@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stopwatch</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
-  <style>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,
+      initial-scale=1.0">
+    <title>Stopwatch</title>
+    <link
+href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&amp;display=swap"
+      rel="stylesheet">
+    <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -112,27 +116,21 @@
 
     .lap-row span:last-child { color: #aaa; }
   </style>
-</head>
-<body>
-
-<div id="status"></div>
-<div id="display">00:00</div>
-
-<div class="controls">
-  <button id="startBtn" onclick="startStop()">Start</button>
-  <button onclick="resetTimer()">Reset</button>
-  <button onclick="lapTime()">Lap</button>
-</div>
-
-<div class="target-row">
-  <span>target</span>
-  <input id="targetMin" type="number" min="0" max="99" value="5" />
-  <span>min</span>
-</div>
-
-<div id="laps"></div>
-
-<script>
+  </head>
+  <body>
+    <div id="display">00:00</div>
+    <div class="controls"> <button id="startBtn" onclick="startStop()">Start</button>
+      <button onclick="resetTimer()">Reset</button> <button
+        onclick="lapTime()">Lap</button><br>
+      <br>
+      <br>
+      <br>
+      <br>
+    </div>
+    <div class="target-row"> <span>target</span> <input id="targetMin"
+        min="0" max="99" value="5" type="number"> <span>min<br>
+      </span> </div>
+    <script>
   let elapsed = 0;
   let interval = null;
   let running = false;
@@ -208,6 +206,14 @@
   }
 
   updateDisplay();
-</script>
-</body>
+</script> <br>
+    <br>
+    <br>
+    link <br>
+    <br>
+    <br>
+    <a href="goog.com">tacotime4343.github.io/stopwatch</a> <a
+      href="www.tacotime4343.github.io/stopwatch"><span
+        style="font-family:Times;color:black;mso-themecolor:text1">link</span></a>.
+  </body>
 </html>
