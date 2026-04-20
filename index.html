@@ -1,261 +1,213 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-  <head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stopwatch</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,
-      initial-scale=1.0">
-    <title>Stopwatch and Calculator</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column; 
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-            gap: 80px; /* Increased space between stopwatch and calculator */
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    body {
+      background: #111;
+      color: #f0ece3;
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+    }
 
-        /* --- Stopwatch Styles --- */
-        .stopwatch-container {
-            text-align: center;
-            width: 100%; 
-            max-width: 600px; 
-        }
+    #display {
+      font-size: clamp(80px, 18vw, 140px);
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: #f0ece3;
+      transition: color 0.4s ease;
+      user-select: none;
+    }
 
-        .display-container {
-            background-color: #e0e8f8; 
-            border: 3px solid #333; 
-            border-radius: 20px;
-            padding: 30px 40px;
-            margin-bottom: 25px;
-            position: relative; 
-        }
+    #display.warn  { color: #d4a843; }
+    #display.over  { color: #c0392b; }
 
-        .time-main {
-            font-size: 8rem; 
-            font-weight: bold;
-            display: block; 
-            letter-spacing: -2px; 
-            line-height: 1; 
-            text-align: center;
-        }
+    .controls {
+      display: flex;
+      gap: 1rem;
+    }
 
-        .ms-small {
-            font-size: 1.5rem; 
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            color: #555; 
-        }
+    button {
+      font-family: 'DM Mono', monospace;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      color: #f0ece3;
+      background: #1e1e1e;
+      border: none;
+      border-radius: 14px;
+      padding: 16px 36px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      outline: none;
+    }
 
-        .button-container {
-            display: flex;
-            justify-content: space-between; 
-            width: 100%;
-        }
+    button:hover  { background: #2a2a2a; }
+    button:active { transform: scale(0.97); background: #333; }
 
-        .btn {
-            font-size: 2rem;
-            padding: 15px 0; 
-            border-radius: 12px;
-            cursor: pointer;
-            border: 3px solid #333; 
-            width: 45%; 
-            color: black;
-            font-weight: bold;
-            transition: background-color 0.2s, border-color 0.2s, transform 0.1s;
-        }
+    .target-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #666;
+    }
 
-        .btn:active {
-            transform: scale(0.98); 
-        }
+    .target-row input {
+      width: 52px;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      color: #f0ece3;
+      background: #1e1e1e;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 8px;
+      outline: none;
+    }
 
-        .start-btn { background-color: #00e000; }
-        .start-btn:hover { background-color: #00ca00; }
-        .start-btn.running { background-color: #eab308; }
-        .clear-btn { background-color: #e00000; }
-        .clear-btn:hover { background-color: #c70000; }
+    .target-row input:focus { background: #2a2a2a; }
 
-        /* --- Calculator Styles --- */
-        .calculator-container {
-            background-color: #e0e8f8;
-            border: 3px solid #333;
-            border-radius: 20px;
-            padding: 25px;
-            width: 100%;
-            max-width: 400px; 
-            box-sizing: border-box;
-        }
+    #status {
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #555;
+      min-height: 18px;
+      transition: color 0.3s;
+    }
 
-        .calc-display {
-            width: 100%;
-            box-sizing: border-box;
-            font-size: 3rem;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: right;
-            border: 3px solid #333;
-            border-radius: 12px;
-            font-family: monospace;
-            background-color: white;
-            color: black;
-        }
+    #status.warn { color: #d4a843; }
+    #status.over { color: #c0392b; }
 
-        .calc-buttons {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-        }
+    #laps {
+      width: min(380px, 90vw);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
 
-        .calc-btn {
-            font-size: 1.8rem;
-            padding: 20px 0;
-            border-radius: 12px;
-            cursor: pointer;
-            border: 3px solid #333;
-            background-color: #fff;
-            color: black;
-            font-weight: bold;
-            transition: transform 0.1s, background-color 0.2s;
-        }
+    .lap-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #666;
+      padding: 6px 12px;
+      background: #1a1a1a;
+      border-radius: 8px;
+    }
 
-        .calc-btn:active {
-            transform: scale(0.95);
-        }
+    .lap-row span:last-child { color: #aaa; }
+  </style>
+</head>
+<body>
 
-        .calc-btn:hover { background-color: #f0f0f0; }
-        .calc-btn.op { background-color: #eab308; }
-        .calc-btn.op:hover { background-color: #dca300; }
-        .calc-btn.clear { background-color: #e00000; }
-        .calc-btn.clear:hover { background-color: #c70000; }
-        .calc-btn.equal { background-color: #00e000; grid-column: span 2; }
-        .calc-btn.equal:hover { background-color: #00ca00; }
+<div id="status"></div>
+<div id="display">00:00</div>
 
-    </style>
-  </head>
-  <body>
-    <div class="stopwatch-container">
-      <div class="display-container"> <span class="time-main"
-          id="display">00:00:00</span> <span class="ms-small" id="ms">000</span>
-      </div>
-      <div class="button-container"> <button class="btn start-btn"
-          id="startStopBtn" onclick="startStop()">Start</button> <button
-          class="btn clear-btn" id="clearBtn" onclick="clearTimer()">Clear</button>
-      </div>
-    </div>
-    <div class="calculator-container"> <input id="calcDisplay"
-        class="calc-display" disabled="disabled" type="text">
-      <div class="calc-buttons"> <button class="calc-btn clear"
-          onclick="clearCalc()" style="grid-column: span 2;">C</button>
-        <button class="calc-btn op" onclick="appendCalc('/')">/</button>
-        <button class="calc-btn op" onclick="appendCalc('*')">*</button>
-        <button class="calc-btn" onclick="appendCalc('7')">7</button> <button
-          class="calc-btn" onclick="appendCalc('8')">8</button> <button
-          class="calc-btn" onclick="appendCalc('9')">9</button> <button
-          class="calc-btn op" onclick="appendCalc('-')">-</button> <button
-          class="calc-btn" onclick="appendCalc('4')">4</button> <button
-          class="calc-btn" onclick="appendCalc('5')">5</button> <button
-          class="calc-btn" onclick="appendCalc('6')">6</button> <button
-          class="calc-btn op" onclick="appendCalc('+')">+</button> <button
-          class="calc-btn" onclick="appendCalc('1')">1</button> <button
-          class="calc-btn" onclick="appendCalc('2')">2</button> <button
-          class="calc-btn" onclick="appendCalc('3')">3</button> <button
-          class="calc-btn equal" onclick="calculate()" style="grid-row:
-          span 2; grid-column: span 1; height: 100%;">=</button> <button
-          class="calc-btn" onclick="appendCalc('0')" style="grid-column:
-          span 2;">0</button> <button class="calc-btn"
-          onclick="appendCalc('.')">.</button> </div>
-    </div>
-    <script>
-        // --- Stopwatch Logic ---
-        let startTime;
-        let elapsedTime = 0;
-        let timerInterval;
-        let running = false;
+<div class="controls">
+  <button id="startBtn" onclick="startStop()">Start</button>
+  <button onclick="resetTimer()">Reset</button>
+  <button onclick="lapTime()">Lap</button>
+</div>
 
-        const displayEl = document.getElementById("display");
-        const msEl = document.getElementById("ms");
-        const startStopBtnEl = document.getElementById("startStopBtn");
+<div class="target-row">
+  <span>target</span>
+  <input id="targetMin" type="number" min="0" max="99" value="5" />
+  <span>min</span>
+</div>
 
-        function updateDisplay() {
-            let elapsed = Date.now() - startTime;
-            
-            let ms = elapsed % 1000;
-            let seconds = Math.floor(elapsed / 1000) % 60;
-            let minutes = Math.floor(elapsed / (1000 * 60)) % 60;
-            let hours = Math.floor(elapsed / (1000 * 60 * 60));
+<div id="laps"></div>
 
-            ms = String(ms).padStart(3, '0');
-            seconds = String(seconds).padStart(2, '0');
-            minutes = String(minutes).padStart(2, '0');
-            hours = String(hours).padStart(2, '0');
+<script>
+  let elapsed = 0;
+  let interval = null;
+  let running = false;
+  let lapCount = 0;
 
-            displayEl.innerHTML = `${hours}:${minutes}:${seconds}`;
-            msEl.innerHTML = ms;
-        }
+  function fmt(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    return String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
 
-        function startStop() {
-            if (!running) {
-                startTime = Date.now() - elapsedTime; 
-                timerInterval = setInterval(updateDisplay, 10); 
-                startStopBtnEl.innerHTML = "Stop";
-                startStopBtnEl.classList.add("running");
-                running = true;
-            } else {
-                clearInterval(timerInterval);
-                elapsedTime = Date.now() - startTime; 
-                startStopBtnEl.innerHTML = "Start";
-                startStopBtnEl.classList.remove("running");
-                running = false;
-            }
-        }
+  function getTargetMs() {
+    return (parseInt(document.getElementById('targetMin').value) || 0) * 60000;
+  }
 
-        function clearTimer() {
-            clearInterval(timerInterval);
-            running = false;
-            elapsedTime = 0;
-            startStopBtnEl.innerHTML = "Start";
-            startStopBtnEl.classList.remove("running");
-            displayEl.innerHTML = "00:00:00";
-            msEl.innerHTML = "000";
-        }
+  function updateDisplay() {
+    const target = getTargetMs();
+    const disp = document.getElementById('display');
+    const status = document.getElementById('status');
+    disp.textContent = fmt(elapsed);
 
-        // --- Calculator Logic ---
-        const calcDisplayEl = document.getElementById("calcDisplay");
+    disp.classList.remove('warn', 'over');
+    status.classList.remove('warn', 'over');
 
-        function appendCalc(value) {
-            const lastChar = calcDisplayEl.value.slice(-1);
-            const operators = ['+', '-', '*', '/'];
-            
-            if (operators.includes(value) && operators.includes(lastChar)) {
-                return;
-            }
-            
-            calcDisplayEl.value += value;
-        }
+    if (target > 0 && elapsed >= target) {
+      disp.classList.add('over');
+      status.classList.add('over');
+      status.textContent = 'over time';
+    } else if (target > 0 && elapsed >= target * 0.8) {
+      disp.classList.add('warn');
+      status.classList.add('warn');
+      status.textContent = 'almost done';
+    } else {
+      if (!running && elapsed === 0) status.textContent = '';
+      else if (running) status.textContent = 'running';
+      else status.textContent = 'paused';
+    }
+  }
 
-        function clearCalc() {
-            calcDisplayEl.value = "";
-        }
+  function startStop() {
+    const btn = document.getElementById('startBtn');
+    if (running) {
+      clearInterval(interval);
+      running = false;
+      btn.textContent = 'Resume';
+    } else {
+      const start = Date.now() - elapsed;
+      interval = setInterval(() => { elapsed = Date.now() - start; updateDisplay(); }, 100);
+      running = true;
+      btn.textContent = 'Pause';
+    }
+    updateDisplay();
+  }
 
-        function calculate() {
-            try {
-                if(calcDisplayEl.value !== "") {
-                    const result = new Function('return ' + calcDisplayEl.value)();
-                    calcDisplayEl.value = Number.isInteger(result) ? result : parseFloat(result.toFixed(5));
-                }
-            } catch (error) {
-                calcDisplayEl.value = "Error";
-                setTimeout(clearCalc, 1500); 
-            }
-        }
-    </script>
-  </body>
+  function resetTimer() {
+    clearInterval(interval);
+    running = false;
+    elapsed = 0;
+    lapCount = 0;
+    document.getElementById('startBtn').textContent = 'Start';
+    document.getElementById('laps').innerHTML = '';
+    updateDisplay();
+  }
+
+  function lapTime() {
+    if (!running && elapsed === 0) return;
+    lapCount++;
+    const laps = document.getElementById('laps');
+    const row = document.createElement('div');
+    row.className = 'lap-row';
+    row.innerHTML = '<span>Lap ' + lapCount + '</span><span>' + fmt(elapsed) + '</span>';
+    laps.insertBefore(row, laps.firstChild);
+  }
+
+  updateDisplay();
+</script>
+</body>
 </html>
