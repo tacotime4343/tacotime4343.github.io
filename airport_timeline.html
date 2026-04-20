@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airport Travel Timeline</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 40px;
+        }
+        .container {
+            max-width: 500px;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        input[type="time"] {
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 12px 15px;
+            font-size: 16px;
+            background-color: #007BFF;
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 25px;
+        }
+        li {
+            background: #e9ecef;
+            margin-bottom: 8px;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Travel Timeline Calculator</h2>
+    
+    <label for="flightTime">Enter your flight departure time (EST):</label>
+    <input type="time" id="flightTime" required>
+    
+    <button onclick="calculateTimeline()">Calculate My Timeline</button>
+
+    <ul id="timelineOutput"></ul>
+</div>
+
+<script>
+    // Helper function to format the time into 12-hour h:mm format
+    function formatTime(date) {
+        let hours = date.getHours();
+        let minutes = date.getMinutes();
+        
+        hours = hours % 12;
+        hours = hours ? hours : 12; // Handle midnight/noon as 12
+        minutes = minutes < 10 ? '0' + minutes : minutes;
+        
+        return hours + ':' + minutes;
+    }
+
+    function calculateTimeline() {
+        const timeInput = document.getElementById('flightTime').value;
+        const outputList = document.getElementById('timelineOutput');
+        outputList.innerHTML = ''; // Clear out the previous calculations
+        
+        if (!timeInput) {
+            alert("Please select a flight time first.");
+            return;
+        }
+
+        // Parse the HTML time input (which is in 24-hour format by default)
+        const [hours, minutes] = timeInput.split(':').map(Number);
+        
+        // Create a base Date object and set it to the input time
+        const baseDate = new Date();
+        baseDate.setHours(hours, minutes, 0, 0);
+
+        // Define the schedule offsets in minutes relative to the EST flight time
+        const schedule = [
+            { offsetMinutes: 0,    label: "EST flight departure" },
+            { offsetMinutes: -60,  label: "CST flight departure" },
+            { offsetMinutes: -180, label: "CST arrival at the airport" },
+            { offsetMinutes: -210, label: "CST parking spot arrival" },
+            { offsetMinutes: -315, label: "CST depart for the airport at the latest" },
+            { offsetMinutes: -345, label: "CST target for departure" }
+        ];
+
+        // Loop through the schedule array and calculate the new times
+        schedule.forEach(step => {
+            // Calculate the specific time for this step by subtracting the offset
+            let stepDate = new Date(baseDate.getTime() + (step.offsetMinutes * 60000));
+            
+            // Create a list item and format the text to match your desired output
+            let li = document.createElement('li');
+            
+            // Format time string and pad it so the times and text align nicely
+            let timeString = formatTime(stepDate).padEnd(5, '\u00A0'); 
+            li.textContent = `${timeString} ${step.label}`;
+            
+            outputList.appendChild(li);
+        });
+    }
+</script>
+
+</body>
+</html>
