@@ -1,14 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard</title>
+    <style>
+        /* Import a clean, modern font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-    <br>  
-    <a href="europe_countdown.html">Europe Countdown</a>
-    <br>
-    <a href="stopwatch.html">Stopwatch & Calculator</a>
-    <br>
-    <a href="stopwatch2.html">Stopwatch</a>
-    <br>
-    <a href="airport_timeline.html">Airport Timeline</a>
-    <br>
-    <a href="number_generator.html">Number Generator</a>
-    <br>
-  </body>
+        /* --- LIGHT MODE VARIABLES (Default) --- */
+        :root {
+            --bg-color: #f4f7f6;
+            --text-color: #1a252f;
+            --card-bg: #ffffff;
+            --card-border: #3498db; /* Blue */
+            --card-shadow: rgba(0, 0, 0, 0.05);
+            --heading-line: #ecf0f1;
+            --link-bg: #f8f9fa;
+            --link-text: #2c3e50;
+            --link-hover-bg: #3498db;
+            --link-hover-text: #ffffff;
+            --button-bg: #ffffff;
+            --button-shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- DARK MODE VARIABLES --- */
+        body.dark-mode {
+            --bg-color: #121212;
+            --text-color: #f0f0f0;
+            --card-bg: #1e1e1e;
+            --card-border: #bb86fc; /* Purple accent for dark mode */
+            --card-shadow: rgba(0, 0, 0, 0.4);
+            --heading-line: #333333;
+            --link-bg: #2d2d2d;
+            --link-text: #e0e0e0;
+            --link-hover-bg: #bb86fc;
+            --link-hover-text: #121212;
+            --button-bg: #2d2d2d;
+            --button-shadow: rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 60px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* Smooth transition when switching modes */
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Styling for the Toggle Button */
+        #theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 20px;
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            box-shadow: 0 2px 8px var(--button-shadow);
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        #theme-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--button-shadow);
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            color: var(--text-color);
+            text-align: center;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .category {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px var(--card-shadow);
+            border-top: 4px solid var(--card-border);
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .category h2 {
+            font-size: 1.2rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #7f8c8d;
+            border-bottom: 1px solid var(--heading-line);
+            padding-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: border-color 0.3s ease;
+        }
+
+        a {
+            display: block;
+            text-decoration: none;
+            color: var(--link-text);
+            font-weight: 500;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            background-color: var(--link-bg);
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        a:hover {
+            background-color: var(--link-hover-bg);
+            color: var(--link-hover-text);
+            border-color: var(--link-hover-bg);
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <button id="theme-toggle">🌙 Dark Mode</button>
+
+    <h1>My Web Tools</h1>
+    
+    <div class="container">
+        
+        <div class="category">
+            <h2>Travel Planning</h2>
+            <a href="europe_countdown.html">🇪🇺 Europe Countdown</a>
+            <a href="airport_timeline.html">✈️ Airport Timeline</a>
+        </div>
+
+        <div class="category">
+            <h2>Classroom & Utilities</h2>
+            <a href="stopwatch.html">⏱️ Stopwatch & Calculator</a>
+            <a href="stopwatch2.html">⏳ Alternate Stopwatch</a>
+            <a href="number_generator.html">🔢 Number Generator</a>
+        </div>
+
+    </div>
+
+    <script>
+        const toggleBtn = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        // 1. Check if the user previously chose Dark Mode
+        const savedTheme = localStorage.getItem('dashboardTheme');
+        
+        // If they did, apply the dark-mode class and update the button text
+        if (savedTheme === 'dark') {
+            body.classList.add('dark-mode');
+            toggleBtn.innerText = '☀️ Light Mode';
+        }
+
+        // 2. Listen for clicks on the button
+        toggleBtn.addEventListener('click', () => {
+            // Toggle the dark-mode class on and off
+            body.classList.toggle('dark-mode');
+            
+            // Check if dark mode is currently active
+            if (body.classList.contains('dark-mode')) {
+                toggleBtn.innerText = '☀️ Light Mode';
+                localStorage.setItem('dashboardTheme', 'dark'); // Save preference
+            } else {
+                toggleBtn.innerText = '🌙 Dark Mode';
+                localStorage.setItem('dashboardTheme', 'light'); // Save preference
+            }
+        });
+    </script>
+
+</body>
 </html>
