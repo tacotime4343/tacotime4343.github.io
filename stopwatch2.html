@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,
+      initial-scale=1.0">
+    <title>Stopwatch</title>
+    <link
+href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&amp;display=swap"
+      rel="stylesheet">
+    <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #111;
+      color: #f0ece3;
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+    }
+
+    #display {
+      font-size: clamp(80px, 18vw, 140px);
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: #f0ece3;
+      transition: color 0.4s ease;
+      user-select: none;
+    }
+
+    #display.warn  { color: #d4a843; }
+    #display.over  { color: #c0392b; }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+    }
+
+    button {
+      font-family: 'DM Mono', monospace;
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 0.06em;
+      color: #f0ece3;
+      background: #1e1e1e;
+      border: none;
+      border-radius: 14px;
+      padding: 16px 36px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      outline: none;
+    }
+
+    button:hover  { background: #2a2a2a; }
+    button:active { transform: scale(0.97); background: #333; }
+
+    .target-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .target-row input {
+      width: 52px;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      color: #f0ece3;
+      background: #1e1e1e;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 8px;
+      outline: none;
+    }
+
+    .target-row input:focus { background: #2a2a2a; }
+
+    #status {
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #555;
+      min-height: 18px;
+      transition: color 0.3s;
+    }
+
+    #status.warn { color: #d4a843; }
+    #status.over { color: #c0392b; }
+
+    #laps {
+      width: min(380px, 90vw);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .lap-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #666;
+      padding: 6px 12px;
+      background: #1a1a1a;
+      border-radius: 8px;
+    }
+
+    .lap-row span:last-child { color: #aaa; }
+  </style>
+  </head>
+  <body>
+    <div id="display">00:00</div>
+    <div class="controls"> <button id="startBtn" onclick="startStop()">Start</button>
+      <button onclick="resetTimer()">Reset</button> <button
+        onclick="lapTime()">Lap</button><br>
+      <br>
+      <br>
+      <br>
+      <br>
+    </div>
+    <div class="target-row"> <span>target</span> <input id="targetMin"
+        min="0" max="99" value="5" type="number"> <span>min<br>
+      </span> </div>
+    <script>
+  let elapsed = 0;
+  let interval = null;
+  let running = false;
+  let lapCount = 0;
+
+  function fmt(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    return String(m).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function getTargetMs() {
+    return (parseInt(document.getElementById('targetMin').value) || 0) * 60000;
+  }
+
+  function updateDisplay() {
+    const target = getTargetMs();
+    const disp = document.getElementById('display');
+    const status = document.getElementById('status');
+    disp.textContent = fmt(elapsed);
+
+    disp.classList.remove('warn', 'over');
+    status.classList.remove('warn', 'over');
+
+    if (target > 0 && elapsed >= target) {
+      disp.classList.add('over');
+      status.classList.add('over');
+      status.textContent = 'over time';
+    } else if (target > 0 && elapsed >= target * 0.8) {
+      disp.classList.add('warn');
+      status.classList.add('warn');
+      status.textContent = 'almost done';
+    } else {
+      if (!running && elapsed === 0) status.textContent = '';
+      else if (running) status.textContent = 'running';
+      else status.textContent = 'paused';
+    }
+  }
+
+  function startStop() {
+    const btn = document.getElementById('startBtn');
+    if (running) {
+      clearInterval(interval);
+      running = false;
+      btn.textContent = 'Resume';
+    } else {
+      const start = Date.now() - elapsed;
+      interval = setInterval(() => { elapsed = Date.now() - start; updateDisplay(); }, 100);
+      running = true;
+      btn.textContent = 'Pause';
+    }
+    updateDisplay();
+  }
+
+  function resetTimer() {
+    clearInterval(interval);
+    running = false;
+    elapsed = 0;
+    lapCount = 0;
+    document.getElementById('startBtn').textContent = 'Start';
+    document.getElementById('laps').innerHTML = '';
+    updateDisplay();
+  }
+
+  function lapTime() {
+    if (!running && elapsed === 0) return;
+    lapCount++;
+    const laps = document.getElementById('laps');
+    const row = document.createElement('div');
+    row.className = 'lap-row';
+    row.innerHTML = '<span>Lap ' + lapCount + '</span><span>' + fmt(elapsed) + '</span>';
+    laps.insertBefore(row, laps.firstChild);
+  }
+
+  updateDisplay();
+</script> <br>
