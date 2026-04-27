@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Timer</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #ffffff;
+            --btn-bg: #333333;
+            --btn-active: #555555;
+            --accent-start: #4CAF50;
+            --accent-clear: #f44336;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none; /* Prevents accidental highlighting on Smartboards */
+            overflow: hidden; /* Prevents scrollbars if screen is small */
+        }
+
+        #display {
+            font-size: 16vw; /* Reduced from 25vw so it fits the screen better */
+            font-weight: bold;
+            font-variant-numeric: tabular-nums; /* Keeps numbers aligned */
+            line-height: 1;
+            margin-bottom: 15px;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px; /* Reduced gap */
+            width: 90vw;
+            max-width: 500px; /* Reduced max-width */
+        }
+
+        button {
+            background-color: var(--btn-bg);
+            color: var(--text-color);
+            border: none;
+            border-radius: 12px;
+            font-size: 2.5rem; /* Slightly smaller text */
+            padding: 15px 0; /* Reduced padding */
+            cursor: pointer;
+            transition: background-color 0.1s;
+            touch-action: manipulation; /* Optimizes for touch screens */
+        }
+
+        button:active {
+            background-color: var(--btn-active);
+        }
+
+        .btn-zero {
+            grid-column: 2;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 90vw;
+            max-width: 500px;
+            margin-top: 15px;
+        }
+
+        #clearBtn {
+            background-color: var(--accent-clear);
+        }
+
+        #startBtn {
+            background-color: var(--accent-start);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="display">00:00</div>
+
+    <div class="keypad">
+        <button onclick="pressNum('1')">1</button>
+        <button onclick="pressNum('2')">2</button>
+        <button onclick="pressNum('3')">3</button>
+        <button onclick="pressNum('4')">4</button>
+        <button onclick="pressNum('5')">5</button>
+        <button onclick="pressNum('6')">6</button>
+        <button onclick="pressNum('7')">7</button>
+        <button onclick="pressNum('8')">8</button>
+        <button onclick="pressNum('9')">9</button>
+        <button class="btn-zero" onclick="pressNum('0')">0</button>
+    </div>
+
+    <div class="controls">
+        <button id="clearBtn" onclick="clearTimer()">Clear</button>
+        <button id="startBtn" onclick="toggleTimer()">Start</button>
+    </div>
+
+    <script>
+        let inputString = "";
+        let isRunning = false;
+        let timerInterval = null;
+        let totalSeconds = 0;
+
+        const display = document.getElementById('display');
+        const startBtn = document.getElementById('startBtn');
+
+        // Handles the microwave-style number input
+        function pressNum(num) {
+            if (isRunning) return; // Prevent input while running
+            
+            // Limit to 4 digits (MM:SS)
+            if (inputString.length < 4) {
+                inputString += num;
+                updateDisplayFromInput();
+            }
+        }
+
+        // Formats the typed string into MM:SS
+        function updateDisplayFromInput() {
+            let padded = inputString.padStart(4, '0');
+            let mins = padded.substring(0, 2);
+            let secs = padded.substring(2, 4);
+            display.innerText = `${mins}:${secs}`;
+        }
+
+        function clearTimer() {
+            if (isRunning) {
+                clearInterval(timerInterval);
+                isRunning = false;
+                startBtn.innerText = "Start";
+                startBtn.style.backgroundColor = "var(--accent-start)";
+            }
+            inputString = "";
+            totalSeconds = 0;
+            display.innerText = "00:00";
+        }
+
+        function toggleTimer() {
+            if (isRunning) {
+                // Pause the timer
+                clearInterval(timerInterval);
+                isRunning = false;
+                startBtn.innerText = "Start";
+                startBtn.style.backgroundColor = "var(--accent-start)";
+            } else {
+                // Start the timer
+                if (inputString === "" && totalSeconds === 0) return;
+
+                if (totalSeconds === 0) {
+                    // Convert input to total seconds upon starting
+                    let padded = inputString.padStart(4, '0');
+                    let mins = parseInt(padded.substring(0, 2), 10);
+                    let secs = parseInt(padded.substring(2, 4), 10);
+                    totalSeconds = (mins * 60) + secs;
+                }
+
+                if (totalSeconds > 0) {
+                    isRunning = true;
+                    startBtn.innerText = "Pause";
+                    startBtn.style.backgroundColor = "#ff9800"; // Orange pause color
+                    timerInterval = setInterval(tick, 1000);
+                }
+            }
+        }
+
+        function tick() {
+            if (totalSeconds > 0) {
+                totalSeconds--;
+                let m = Math.floor(totalSeconds / 60);
+                let s = totalSeconds % 60;
+
+                let mStr = m.toString().padStart(2, '0');
+                let sStr = s.toString().padStart(2, '0');
+                display.innerText = `${mStr}:${sStr}`;
+
+                // Update input string so resuming from a pause continues correctly
+                inputString = mStr + sStr; 
+            } else {
+                // Timer hits zero
+                clearInterval(timerInterval);
+                isRunning = false;
+                inputString = "";
+                startBtn.innerText = "Start";
+                startBtn.style.backgroundColor = "var(--accent-start)";
+                display.innerText = "00:00";
+            }
+        }
+    </script>
+</body>
+</html>
