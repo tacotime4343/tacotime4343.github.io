@@ -192,8 +192,22 @@
                 startBtn.innerText = "Start";
                 startBtn.style.backgroundColor = "var(--accent-start)";
                 display.innerText = "00:00";
+                playChime(); // Trigger the gentle alarm
             }
         }
-    </script>
-</body>
-</html>
+
+        // Synthesizes a gentle two-tone chime without needing external sound files
+        function playChime() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return; // Browser doesn't support Web Audio API
+            
+            const ctx = new AudioContext();
+            
+            function playTone(freq, startTime) {
+                const osc = ctx.createOscillator();
+                const gainNode = ctx.createGain();
+                
+                osc.type = 'sine'; // A sine wave produces a very soft, smooth tone
+                osc.frequency.setValueAtTime(freq, startTime);
+                
+                // Creates a bell-like envelope: quick volume up, long fade out
