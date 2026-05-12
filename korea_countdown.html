@@ -62,3 +62,93 @@
         .time-box {
             background: rgba(0, 0, 0, 0.4);
             border-radius: 15px;
+            padding: 20px;
+            min-width: 100px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .time-box span {
+            display: block;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #b3b3b3;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.5rem; }
+            .time-box { min-width: 70px; padding: 15px; }
+            .time-box span { font-size: 2.5rem; }
+            .timer { gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="countdown-container">
+        <h1>The Korean Adventure</h1>
+        <h2>Family Summer Trip to South Korea</h2>
+        
+        <div class="timer" id="timer">
+            <div class="time-box">
+                <span id="days">00</span>
+                <div class="label">Days</div>
+            </div>
+            <div class="time-box">
+                <span id="hours">00</span>
+                <div class="label">Hours</div>
+            </div>
+            <div class="time-box">
+                <span id="minutes">00</span>
+                <div class="label">Minutes</div>
+            </div>
+            <div class="time-box">
+                <span id="seconds">00</span>
+                <div class="label">Seconds</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set the date we're counting down to
+        const countDownDate = new Date("June 6, 2026 12:00:00").getTime();
+
+        // Update the countdown every 1 second
+        const x = setInterval(function() {
+
+            // Get today's date and time
+            const now = new Date().getTime();
+
+            // Find the distance between now and the countdown date
+            const distance = countDownDate - now;
+
+            // Time calculations for days, hours, minutes and seconds
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Display the result in the corresponding HTML elements
+            // Adding a '0' in front of single-digit numbers for a cleaner look
+            document.getElementById("days").innerHTML = days < 10 ? "0" + days : days;
+            document.getElementById("hours").innerHTML = hours < 10 ? "0" + hours : hours;
+            document.getElementById("minutes").innerHTML = minutes < 10 ? "0" + minutes : minutes;
+            document.getElementById("seconds").innerHTML = seconds < 10 ? "0" + seconds : seconds;
+
+            // If the countdown is finished, write some text
+            if (distance < 0) {
+                clearInterval(x);
+                document.getElementById("timer").innerHTML = "<h2>Annyeonghaseyo! It's time to travel to Korea!</h2>";
+            }
+        }, 1000);
+    </script>
+
+</body>
+</html>
