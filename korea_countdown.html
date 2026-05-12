@@ -1,154 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Korea Trip Countdown</title>
-    <style>
-        /* Import an elegant font from Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Korea Adventure Countdown</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&family=Cinzel:wght@600&display=swap');
 
-        body, html {
-            height: 100%;
-            margin: 0;
-            font-family: 'Montserrat', sans-serif;
-            color: #ffffff;
-            /* Background image using the stable Wikimedia Commons link */
-            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url('https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Seoul_City_Skyline.jpg/1920px-Seoul_City_Skyline.jpg') no-repeat center center fixed;
-            background-size: cover;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-
-        /* Glassmorphism card effect */
-        .countdown-container {
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 20px;
-            padding: 50px 60px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            max-width: 800px;
-            width: 90%;
-        }
-
-        h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 3.5rem;
-            margin-top: 0;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-
-        h2 {
-            font-size: 1.2rem;
-            font-weight: 300;
-            letter-spacing: 3px;
-            margin-bottom: 40px;
-            text-transform: uppercase;
-            color: #e0e0e0;
-        }
-
-        .timer {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .time-box {
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 15px;
-            padding: 20px;
-            min-width: 100px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .time-box span {
-            display: block;
-            font-size: 3.5rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .label {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #b3b3b3;
-        }
-
-        /* Responsive adjustments for smaller screens */
-        @media (max-width: 600px) {
-            h1 { font-size: 2.5rem; }
-            .time-box { min-width: 70px; padding: 15px; }
-            .time-box span { font-size: 2.5rem; }
-            .timer { gap: 10px; }
-        }
-    </style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  font-family:'Montserrat',sans-serif;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:white;
+  background:
+   linear-gradient(rgba(10,20,40,.45),rgba(10,20,40,.65)),
+   url('https://images.unsplash.com/photo-1538485399081-7c8974d1b7c6?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat fixed;
+  overflow:hidden;
+}
+body::before{
+ content:'';
+ position:absolute;
+ inset:0;
+ background:radial-gradient(circle at top right, rgba(255,80,80,.2), transparent 40%), radial-gradient(circle at bottom left, rgba(0,140,255,.2), transparent 40%);
+ animation: drift 12s infinite alternate ease-in-out;
+}
+@keyframes drift{from{transform:scale(1);}to{transform:scale(1.15);}}
+.container{
+ position:relative;
+ z-index:2;
+ background:rgba(255,255,255,.12);
+ backdrop-filter:blur(16px);
+ border:1px solid rgba(255,255,255,.25);
+ border-radius:28px;
+ padding:60px;
+ width:min(92%,950px);
+ box-shadow:0 20px 60px rgba(0,0,0,.45);
+ text-align:center;
+}
+.small{letter-spacing:5px;text-transform:uppercase;font-size:.95rem;color:#f2d7d7;}
+h1{
+ font-family:'Cinzel',serif;
+ font-size:4rem;
+ margin:.5rem 0;
+ text-shadow:0 4px 20px rgba(0,0,0,.5);
+}
+.subtitle{font-size:1.25rem;color:#e8eef9;margin-bottom:35px;}
+.landmarks{font-size:1.5rem;margin-bottom:30px;letter-spacing:12px;opacity:.85;}
+.timer{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;}
+.box{
+ background:rgba(255,255,255,.08);
+ padding:24px;
+ min-width:140px;
+ border-radius:20px;
+ border:1px solid rgba(255,255,255,.15);
+ transition:.3s;
+}
+.box:hover{transform:translateY(-8px);}
+.box span{display:block;font-size:4rem;font-weight:700;}
+.label{text-transform:uppercase;letter-spacing:3px;color:#d8e5ff;}
+.footer{margin-top:35px;font-style:italic;color:#f4f4f4;}
+@media(max-width:700px){h1{font-size:2.5rem}.box{min-width:100px}.box span{font-size:2.6rem}.container{padding:35px 20px;}}
+</style>
 </head>
 <body>
-
-    <div class="countdown-container">
-        <h1>The Korean Adventure</h1>
-        <h2>Family Summer Trip to South Korea</h2>
-        
-        <div class="timer" id="timer">
-            <div class="time-box">
-                <span id="days">00</span>
-                <div class="label">Days</div>
-            </div>
-            <div class="time-box">
-                <span id="hours">00</span>
-                <div class="label">Hours</div>
-            </div>
-            <div class="time-box">
-                <span id="minutes">00</span>
-                <div class="label">Minutes</div>
-            </div>
-            <div class="time-box">
-                <span id="seconds">00</span>
-                <div class="label">Seconds</div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Set the date we're counting down to
-        const countDownDate = new Date("June 6, 2026 12:00:00").getTime();
-
-        // Update the countdown every 1 second
-        const x = setInterval(function() {
-
-            // Get today's date and time
-            const now = new Date().getTime();
-
-            // Find the distance between now and the countdown date
-            const distance = countDownDate - now;
-
-            // Time calculations for days, hours, minutes and seconds
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            // Display the result in the corresponding HTML elements
-            // Adding a '0' in front of single-digit numbers for a cleaner look
-            document.getElementById("days").innerHTML = days < 10 ? "0" + days : days;
-            document.getElementById("hours").innerHTML = hours < 10 ? "0" + hours : hours;
-            document.getElementById("minutes").innerHTML = minutes < 10 ? "0" + minutes : minutes;
-            document.getElementById("seconds").innerHTML = seconds < 10 ? "0" + seconds : seconds;
-
-            // If the countdown is finished, write some text
-            if (distance < 0) {
-                clearInterval(x);
-                document.getElementById("timer").innerHTML = "<h2>Annyeonghaseyo! It's time to travel to Korea!</h2>";
-            }
-        }, 1000);
-    </script>
-
+<div class="container">
+<div class="small">대한민국 2026</div>
+<h1>Korea Countdown</h1>
+<div class="subtitle">Back to Seoul, Busan & unforgettable memories ✈️</div>
+<div class="landmarks">🏯 🌸 🌆 🚄 🌊</div>
+<div class="timer" id="timer">
+<div class="box"><span id="days">00</span><div class="label">Days</div></div>
+<div class="box"><span id="hours">00</span><div class="label">Hours</div></div>
+<div class="box"><span id="minutes">00</span><div class="label">Minutes</div></div>
+<div class="box"><span id="seconds">00</span><div class="label">Seconds</div></div>
+</div>
+<div class="footer">Next stop: Chuncheon & Busan 🇰🇷</div>
+</div>
+<script>
+const countDownDate=new Date('June 6, 2026 12:00:00').getTime();
+setInterval(()=>{
+ const now=new Date().getTime();
+ const distance=countDownDate-now;
+ const days=Math.floor(distance/(1000*60*60*24));
+ const hours=Math.floor((distance%(1000*60*60*24))/(1000*60*60));
+ const minutes=Math.floor((distance%(1000*60*60))/(1000*60));
+ const seconds=Math.floor((distance%(1000*60))/1000);
+ document.getElementById('days').innerHTML=String(days).padStart(2,'0');
+ document.getElementById('hours').innerHTML=String(hours).padStart(2,'0');
+ document.getElementById('minutes').innerHTML=String(minutes).padStart(2,'0');
+ document.getElementById('seconds').innerHTML=String(seconds).padStart(2,'0');
+ if(distance<0){document.getElementById('timer').innerHTML='<h2>안녕하세요! Time for Korea! ✈️</h2>';}
+},1000);
+</script>
 </body>
 </html>
