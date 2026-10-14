@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom QR Code Generator</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Load qrcode.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Ensure the generated QR code is centered */
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            background: white;
+            border-radius: 0.5rem;
+        }
+        #qrcode img {
+            margin: auto;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">QR Generator</h1>
+            <p class="text-gray-500 text-sm">Create quick links for your classroom</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="space-y-4">
+            <div>
+                <label for="qr-input" class="block text-sm font-medium text-gray-700 mb-1">Enter URL or Text</label>
+                <input 
+                    type="text" 
+                    id="qr-input" 
+                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    placeholder="e.g., https://classroom.google.com/..."
+                >
+            </div>
+
+            <button 
+                id="generate-btn" 
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-colors duration-200"
+            >
+                Generate QR Code
+            </button>
+        </div>
+
+        <!-- Output Section (Hidden initially) -->
+        <div id="output-section" class="mt-8 hidden flex-col items-center space-y-6">
+            <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 w-full flex flex-col items-center bg-gray-50">
+                <!-- QR Code will be injected here -->
+                <div id="qrcode" class="shadow-sm"></div>
+            </div>
+
+            <button 
+                id="download-btn" 
+                class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-colors duration-200 flex items-center justify-center gap-2"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Image
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputField = document.getElementById('qr-input');
+            const generateBtn = document.getElementById('generate-btn');
+            const outputSection = document.getElementById('output-section');
+            const qrcodeContainer = document.getElementById('qrcode');
+            const downloadBtn = document.getElementById('download-btn');
+
+            let qrCode = null;
+
+            // Handle Generate Button Click
+            generateBtn.addEventListener('click', () => {
+                const text = inputField.value.trim();
+
+                if (!text) {
+                    alert('Please enter a URL or some text first.');
+                    return;
+                }
+
+                // Clear previous QR code if it exists
+                qrcodeContainer.innerHTML = '';
+                
+                // Show output section
+                outputSection.classList.remove('hidden');
+                outputSection.classList.add('flex');
+
+                // Generate new QR code
+                qrCode = new QRCode(qrcodeContainer, {
+                    text: text,
+                    width: 200,
+                    height: 200,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H // High error correction
+                });
+            });
+
+            // Handle Enter key in input field
+            inputField.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    generateBtn.click();
+                }
+            });
+
+            // Handle Download Button Click
+            downloadBtn.addEventListener('click', () => {
+                // qrcode.js generates a canvas first, then converts it to an img tag.
+                // We grab the image source directly from the generated img tag.
+                const qrImage = qrcodeContainer.querySelector('img');
+                const qrCanvas = qrcodeContainer.querySelector('canvas');
+                
+                let imageUrl = '';
+                
+                if (qrImage && qrImage.src) {
+                    imageUrl = qrImage.src;
+                } else if (qrCanvas) {
+                    imageUrl = qrCanvas.toDataURL("image/png");
+                } else {
+                    alert("No QR code to download.");
+                    return;
+                }
+
+                // Create a temporary link element to trigger the download
+                const downloadLink = document.createElement('a');
+                downloadLink.href = imageUrl;
+                
+                // Name the file based on a sanitized version of the input, or a default
+                let safeName = inputField.value.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                if(safeName.length > 20) safeName = safeName.substring(0, 20);
+                
+                downloadLink.download = `QR_Code_${safeName || 'Classroom'}.png`;
+                
+                // Append, click, and remove the link
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            });
+        });
+    </script>
+</body>
+</html>
