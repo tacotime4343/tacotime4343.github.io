@@ -16,45 +16,62 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6; /* Light gray background */
         }
-        /* Ensure the generated QR code is centered */
+        /* Increased padding to show a thicker white border visually on screen */
         #qrcode {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 1rem;
+            padding: 2.5rem; 
             background: white;
-            border-radius: 0.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         #qrcode img {
             margin: auto;
+            display: block;
         }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100">
         
         <!-- Header -->
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">QR Generator</h1>
-            <p class="text-gray-500 text-sm">Create a QR Code</p>
+            <p class="text-gray-500 text-sm">Create quick links for your classroom</p>
         </div>
 
         <!-- Input Section -->
-        <div class="space-y-4">
+        <div class="space-y-5">
+            <!-- New Title Input -->
             <div>
-                <label for="qr-input" class="block text-sm font-medium text-gray-700 mb-1">Enter URL or Text</label>
+                <label for="qr-title" class="block text-sm font-medium text-gray-700 mb-1">Title (Optional)</label>
+                <input 
+                    type="text" 
+                    id="qr-title" 
+                    class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-800"
+                    placeholder="e.g., Atlantic Slave Trade"
+                >
+                <p class="text-xs text-gray-400 mt-1">This will appear above the downloaded QR code.</p>
+            </div>
+
+            <div>
+                <label for="qr-input" class="block text-sm font-medium text-gray-700 mb-1">Enter URL or Text <span class="text-red-500">*</span></label>
                 <input 
                     type="text" 
                     id="qr-input" 
-                    class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-800"
                     placeholder="e.g., https://classroom.google.com/..."
                 >
             </div>
 
+            <!-- Error Message Container (Replaces alert) -->
+            <div id="error-message" class="hidden text-red-600 text-sm font-medium bg-red-50 p-3 rounded-lg border border-red-100"></div>
+
             <button 
                 id="generate-btn" 
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-colors duration-200"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
             >
                 Generate QR Code
             </button>
@@ -62,16 +79,17 @@
 
         <!-- Output Section (Hidden initially) -->
         <div id="output-section" class="mt-8 hidden flex-col items-center space-y-6">
-            <div class="border-2 border-dashed border-gray-200 rounded-xl p-4 w-full flex flex-col items-center bg-gray-50">
+            <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 w-full flex flex-col items-center bg-gray-50">
+                <div id="display-title" class="text-lg font-bold text-gray-800 mb-4 hidden text-center"></div>
                 <!-- QR Code will be injected here -->
-                <div id="qrcode" class="shadow-sm"></div>
+                <div id="qrcode"></div>
             </div>
 
             <button 
                 id="download-btn" 
-                class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition-colors duration-200 flex items-center justify-center gap-2"
+                class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
                 Download Image
@@ -82,80 +100,138 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const titleField = document.getElementById('qr-title');
             const inputField = document.getElementById('qr-input');
             const generateBtn = document.getElementById('generate-btn');
             const outputSection = document.getElementById('output-section');
             const qrcodeContainer = document.getElementById('qrcode');
             const downloadBtn = document.getElementById('download-btn');
+            const displayTitle = document.getElementById('display-title');
+            const errorMessage = document.getElementById('error-message');
 
             let qrCode = null;
+
+            function showError(msg) {
+                errorMessage.textContent = msg;
+                errorMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    errorMessage.classList.add('hidden');
+                }, 3000);
+            }
 
             // Handle Generate Button Click
             generateBtn.addEventListener('click', () => {
                 const text = inputField.value.trim();
+                const titleText = titleField.value.trim();
 
                 if (!text) {
-                    alert('Please enter a URL or some text first.');
+                    showError('Please enter a URL or some text first.');
                     return;
                 }
 
-                // Clear previous QR code if it exists
+                // Clear previous QR code
                 qrcodeContainer.innerHTML = '';
+                errorMessage.classList.add('hidden');
                 
+                // Handle Title Display
+                if (titleText) {
+                    displayTitle.textContent = titleText;
+                    displayTitle.classList.remove('hidden');
+                    displayTitle.classList.add('block');
+                } else {
+                    displayTitle.classList.add('hidden');
+                    displayTitle.classList.remove('block');
+                }
+
                 // Show output section
                 outputSection.classList.remove('hidden');
                 outputSection.classList.add('flex');
 
-                // Generate new QR code
+                // Generate new QR code (Base size, padding will be added later for download)
                 qrCode = new QRCode(qrcodeContainer, {
                     text: text,
-                    width: 200,
-                    height: 200,
+                    width: 256, // Slightly larger base resolution
+                    height: 256,
                     colorDark : "#000000",
                     colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.H // High error correction
+                    correctLevel : QRCode.CorrectLevel.H
                 });
             });
 
-            // Handle Enter key in input field
-            inputField.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    generateBtn.click();
-                }
+            // Handle Enter key in input fields
+            [inputField, titleField].forEach(field => {
+                field.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        generateBtn.click();
+                    }
+                });
             });
 
-            // Handle Download Button Click
+            // Handle Download Button Click with Canvas Padding Logic
             downloadBtn.addEventListener('click', () => {
-                // qrcode.js generates a canvas first, then converts it to an img tag.
-                // We grab the image source directly from the generated img tag.
                 const qrImage = qrcodeContainer.querySelector('img');
-                const qrCanvas = qrcodeContainer.querySelector('canvas');
+                const titleText = titleField.value.trim();
                 
-                let imageUrl = '';
-                
-                if (qrImage && qrImage.src) {
-                    imageUrl = qrImage.src;
-                } else if (qrCanvas) {
-                    imageUrl = qrCanvas.toDataURL("image/png");
-                } else {
-                    alert("No QR code to download.");
+                if (!qrImage || !qrImage.src) {
+                    showError("Please wait for the QR code to finish generating.");
                     return;
                 }
 
-                // Create a temporary link element to trigger the download
-                const downloadLink = document.createElement('a');
-                downloadLink.href = imageUrl;
+                // Create an Image object from the generated QR
+                const img = new Image();
+                img.onload = () => {
+                    // Setup Canvas
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // Configuration for the downloaded image
+                    const qrSize = img.width; // 256
+                    const padding = 50; // Generous white border
+                    const titleAreaHeight = titleText ? 70 : 0; 
+                    
+                    // Calculate total dimensions
+                    canvas.width = qrSize + (padding * 2);
+                    canvas.height = qrSize + (padding * 2) + titleAreaHeight;
+
+                    // 1. Draw solid white background
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // 2. Draw Title if exists
+                    let qrYPos = padding;
+                    if (titleText) {
+                        ctx.fillStyle = '#1f2937'; // text-gray-800
+                        ctx.font = 'bold 24px Inter, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        // Position text horizontally centered, vertically in the dedicated top area
+                        ctx.fillText(titleText, canvas.width / 2, padding + 15);
+                        
+                        // Push QR code down to make room for title
+                        qrYPos = padding + titleAreaHeight;
+                    }
+
+                    // 3. Draw QR Code
+                    ctx.drawImage(img, padding, qrYPos, qrSize, qrSize);
+
+                    // 4. Trigger Download
+                    const imageUrl = canvas.toDataURL("image/png");
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = imageUrl;
+                    
+                    let safeName = titleText || inputField.value.trim();
+                    safeName = safeName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                    if(safeName.length > 20) safeName = safeName.substring(0, 20);
+                    
+                    downloadLink.download = `QR_${safeName || 'Code'}.png`;
+                    
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
+                };
                 
-                // Name the file based on a sanitized version of the input, or a default
-                let safeName = inputField.value.trim().replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                if(safeName.length > 20) safeName = safeName.substring(0, 20);
-                
-                downloadLink.download = `QR_Code_${safeName || 'Classroom'}.png`;
-                
-                // Append, click, and remove the link
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
+                // Set source to trigger onload
+                img.src = qrImage.src;
             });
         });
     </script>
