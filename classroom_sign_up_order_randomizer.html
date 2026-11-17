@@ -112,10 +112,118 @@
                 <div>
                     <label for="student-count-input" class="block text-sm font-bold text-slate-700 mb-2">Number of Students (1 to N)</label>
                     <div class="flex items-center gap-4">
-                        <input type="number" id="student-count-input" required min="2" max="150" value="16"
+                        <input type="number" id="student-count-input" required min="2" max="100" value="16"
                             class="w-32 px-4 py-3.5 rounded-xl border border-slate-300 text-slate-900 font-bold focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none transition text-xl text-center">
                         <span class="text-sm text-slate-500 font-medium">Generates random numbers <strong class="text-slate-800">1</strong> through <strong id="preview-max-num" class="text-slate-800">16</strong></span>
                     </div>
+                </div>
+
+                <!-- Configurable Public App URL (Crucial for Google Sites iframe embeds) -->
+                <div class="pt-2 border-t border-slate-100">
+                    <button type="button" id="toggle-url-settings-btn" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-link"></i>
+                        <span>Configure Public QR Link URL (GitHub Pages / Google Sites)</span>
+                        <i id="url-settings-chevron" class="fa-solid fa-chevron-down text-[10px]"></i>
+                    </button>
+                    <div id="url-settings-panel" class="hidden mt-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                        <label for="public-base-url-input" class="block text-xs font-bold text-slate-700">Public Student App URL</label>
+                        <input type="url" id="public-base-url-input" required
+                            class="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-800 font-mono text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none">
+                        <p id="iframe-warning-note" class="text-[11px] text-slate-500 leading-relaxed">
+                            QR codes will point directly to this public URL so students scanning from Google Sites open the fast mobile page cleanly.
+                        </p>
+                    </div>
+                </div>
+
+                <button type="submit" id="create-session-btn"
+                    class="w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-lg shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>Launch Session & Generate QR Code</span>
+                </button>
+            </form>
+
+            <!-- Recent Sessions & Resume by Session ID -->
+            <div class="mt-8 pt-6 border-t border-slate-200 space-y-4">
+                <div>
+                    <label for="resume-session-input" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Resume Existing Session ID</label>
+                    <form id="resume-session-form" class="flex gap-2">
+                        <input type="text" id="resume-session-input" placeholder="Paste Session ID..."
+                            class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-800 focus:border-indigo-600 outline-none">
+                        <button type="submit" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition">
+                            Load
+                        </button>
+                    </form>
+                </div>
+
+                <div id="recent-sessions-container" class="hidden">
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Recent Classes on This Computer</p>
+                    <div id="recent-sessions-list" class="space-y-2"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Active Live Session Dashboard -->
+        <section id="teacher-live-panel" class="hidden space-y-6">
+            
+            <!-- Top Control Banner -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                    <div class="flex flex-wrap items-center gap-2.5 mb-1">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                            LIVE SESSION
+                        </span>
+                        <span class="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md" id="display-session-id">ID: ---</span>
+                    </div>
+                    <h2 id="live-class-title" class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">First Block</h2>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <button id="manual-refresh-btn" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition flex items-center gap-2" title="Sync now">
+                        <i id="refresh-icon" class="fa-solid fa-arrows-rotate"></i>
+                        <span class="hidden sm:inline">Refresh</span>
+                    </button>
+                    <button id="teacher-manual-draw-btn" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Add Student</span>
+                    </button>
+                    <button id="export-csv-btn" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-file-csv"></i>
+                        <span>Export CSV</span>
+                    </button>
+                    <button id="reset-draws-btn" class="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-semibold text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-eraser"></i>
+                        <span>Clear Draws</span>
+                    </button>
+                    <button id="reset-session-btn" class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-semibold text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>Switch / New Class</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Teacher Manual Entry Drawer (For absent/no-phone students) -->
+            <div id="manual-draw-drawer" class="hidden bg-indigo-50/90 border border-indigo-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 animate-pop-in">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-hand-pointer"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-sm">Draw Number for Student Without Phone</h4>
+                        <p class="text-xs text-slate-600">Randomly assigns one of the remaining numbers in the hat.</p>
+                    </div>
+                </div>
+                <form id="manual-draw-form" class="flex items-center gap-2">
+                    <input type="text" id="manual-student-name" required placeholder="Student full name..." maxlength="60"
+                        class="px-3.5 py-2.5 rounded-xl border border-indigo-300 bg-white text-slate-900 text-sm font-semibold focus:outline-none focus:border-indigo-600">
+                    <button type="submit" id="manual-draw-submit" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shrink-0 transition">
+                        Assign
+                    </button>
+                    <button type="button" id="manual-draw-cancel" class="px-3 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 font-semibold text-sm">
+                        Cancel
+                    </button>
+                </form>
+            </div>
                 </div>
 
                 <button type="submit" id="create-session-btn"
@@ -303,6 +411,10 @@
                     <p class="font-semibold text-slate-800 mb-0.5">You're all set!</p>
                     <p class="text-xs">Your number is saved on this device and displayed live on your teacher's screen.</p>
                 </div>
+
+                <button type="button" id="student-reset-device-btn" class="mt-5 text-xs text-slate-400 hover:text-slate-600 underline transition">
+                    Sharing a device? Draw for another student
+                </button>
             </div>
 
             <!-- Step 3: Session Full Card -->
@@ -320,28 +432,73 @@
         </div>
     </main>
 
-    <!-- Firebase Modular SDK Imports & App Logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+    <!-- Zero-Setup Cloud Sync Application Logic (JSONBlob REST API) -->
+    <script>
         // ---------------------------------------------------------------------
-        // 1. ENVIRONMENT & FIREBASE INITIALIZATION
+        // 1. CLOUD API & ENVIRONMENT CONFIGURATION (ZERO-SETUP / NO FIREBASE)
         // ---------------------------------------------------------------------
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'classroom-order-draw';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const JSONBLOB_API = 'https://jsonblob.com/api/jsonBlob';
+        const DEFAULT_GITHUB_URL = 'https://tacotime4343.github.io/classroom_sign_up_order_randomizer/';
+        const RECENT_SESSIONS_KEY = 'orderdraw_recent_sessions_v1';
+        const ACTIVE_TEACHER_SESSION_KEY = 'orderdraw_active_teacher_blob_v1';
+        const PUBLIC_URL_STORAGE_KEY = 'orderdraw_public_base_url_v1';
 
-        let app, auth, db;
-        let currentUser = null;
-        let unsubscribeSession = null;
-        let currentSessionId = null;
+        let pollIntervalId = null;
+        let currentBlobId = null;
         let currentSessionData = null;
+        let isPolling = false;
 
-        // Parse URL Query Parameters (?session=xyz)
+        // Parse URL Query Parameters (?blob=xyz or legacy ?session=xyz)
         const urlParams = new URLSearchParams(window.location.search);
-        const querySessionId = urlParams.get('session');
-        const isStudentMode = Boolean(querySessionId);
+        const queryBlobId = urlParams.get('blob') || urlParams.get('session');
+        const isStudentMode = Boolean(queryBlobId);
+
+        // Detect if running inside an iframe or Google Sites sandbox
+        function isEmbeddedInSandbox() {
+            try {
+                const isIframe = window.self !== window.top;
+                const host = window.location.hostname || '';
+                const protocol = window.location.protocol || '';
+                return isIframe ||
+                    host.includes('googleusercontent.com') ||
+                    host.includes('google.com') ||
+                    protocol === 'blob:' ||
+                    protocol === 'about:';
+            } catch (e) {
+                return true;
+            }
+        }
+
+        // Determine the best default Public Base URL for QR codes
+        function getDefaultPublicBaseUrl() {
+            try {
+                const savedUrl = localStorage.getItem(PUBLIC_URL_STORAGE_KEY);
+                if (savedUrl && savedUrl.startsWith('http')) return savedUrl;
+            } catch (e) {}
+
+            if (isEmbeddedInSandbox()) {
+                return DEFAULT_GITHUB_URL;
+            }
+            // Hosted directly (e.g., on GitHub Pages)
+            const cleanUrl = window.location.origin + window.location.pathname;
+            return cleanUrl.startsWith('http') ? cleanUrl : DEFAULT_GITHUB_URL;
+        }
+
+        // Build Student Share URL cleanly pointing to the public GitHub Pages URL
+        function buildStudentUrl(blobId) {
+            const inputEl = document.getElementById('public-base-url-input');
+            let base = (inputEl && inputEl.value.trim()) ? inputEl.value.trim() : getDefaultPublicBaseUrl();
+            try {
+                const url = new URL(base);
+                url.searchParams.set('blob', blobId);
+                url.hash = '';
+                return url.toString();
+            } catch (e) {
+                const fallback = new URL(DEFAULT_GITHUB_URL);
+                fallback.searchParams.set('blob', blobId);
+                return fallback.toString();
+            }
+        }
 
         // DOM Elements
         const loadingView = document.getElementById('loading-view');
@@ -404,85 +561,250 @@
             });
         }
 
-        // Helper: Firestore Document Reference (Follows strict public artifact path rule)
-        function getSessionDocRef(sessionId) {
-            return doc(db, 'artifacts', appId, 'public', 'data', 'signup_sessions', sessionId);
-        }
-
-        // Helper: Teacher active session pointer reference (so refreshing Teacher View restores their active board)
-        function getTeacherPointerRef(userId) {
-            return doc(db, 'artifacts', appId, 'users', userId, 'settings', 'active_session');
-        }
-
-        // Generate a short, clean, URL-friendly Session ID
-        function generateSessionId() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let result = '';
-            for (let i = 0; i < 6; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
+        // Update Top-Right Connection Status Pill
+        function setConnectionStatus(status, label) {
+            if (status === 'connected') {
+                connectionBadge.className = "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
+                connectionBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>${label || 'Cloud Sync Active'}</span>`;
+            } else if (status === 'syncing') {
+                connectionBadge.className = "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200";
+                connectionBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span><span>${label || 'Syncing...'}</span>`;
+            } else {
+                connectionBadge.className = "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200";
+                connectionBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>${label || 'Connection Issue'}</span>`;
             }
-            return result;
-        }
-
-        // Build Student Share URL cleanly without duplicating query params
-        function buildStudentUrl(sessionId) {
-            const url = new URL(window.location.href);
-            url.search = `?session=${encodeURIComponent(sessionId)}`;
-            url.hash = '';
-            return url.toString();
         }
 
         // ---------------------------------------------------------------------
-        // 2. AUTHENTICATION & BOOTSTRAP
+        // 2. JSONBLOB REST API HELPERS (CORS-ENABLED CLOUD JSON STORAGE)
         // ---------------------------------------------------------------------
-        async function initApp() {
-            if (!firebaseConfig) {
-                loadingView.innerHTML = `<p class="text-rose-600 font-bold">Configuration Error: Firebase config not found.</p>`;
-                return;
+        async function createCloudSession(payload) {
+            const response = await fetch(JSONBLOB_API, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
 
-            try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+            // Extract Blob ID from Location or X-jsonblob header
+            const locationHeader = response.headers.get('Location') || response.headers.get('X-jsonblob');
+            if (!locationHeader) {
+                throw new Error('Could not retrieve session ID from server.');
+            }
+            const parts = locationHeader.split('/').filter(Boolean);
+            return parts[parts.length - 1];
+        }
 
-                // Sign in first (Custom Token if provided, otherwise Anonymous Auth)
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
+        async function fetchCloudSession(blobId) {
+            // Cache-bust query parameter ensures browsers/proxies never return stale GETs
+            const response = await fetch(`${JSONBLOB_API}/${encodeURIComponent(blobId)}?_=${Date.now()}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.status === 404) {
+                throw new Error('SESSION_NOT_FOUND');
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return await response.json();
+        }
+
+        async function updateCloudSession(blobId, payload) {
+            const response = await fetch(`${JSONBLOB_API}/${encodeURIComponent(blobId)}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return await response.json();
+        }
+
+        // Optimistic Concurrency Draw Algorithm (Read -> Modify -> Write -> Verify)
+        // Guarantees zero duplicate numbers even if two students tap Draw at the exact same millisecond
+        async function claimRandomNumberSafely(blobId, studentName, clientToken, maxRetries = 4) {
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                // 1. Fetch latest state
+                const latestData = await fetchCloudSession(blobId);
+                const maxStudents = latestData.maxStudents || 16;
+                const draws = Array.isArray(latestData.draws) ? [...latestData.draws] : [];
+
+                // Check if this exact clientToken already claimed a spot in the cloud
+                if (clientToken) {
+                    const existing = draws.find(d => d.clientToken === clientToken);
+                    if (existing) {
+                        return {
+                            number: existing.number,
+                            name: existing.name,
+                            className: latestData.className,
+                            maxStudents: maxStudents
+                        };
+                    }
                 }
 
-                onAuthStateChanged(auth, async (user) => {
-                    if (!user) return;
-                    currentUser = user;
+                // 2. Compute remaining unclaimed numbers (1 to maxStudents)
+                const takenSet = new Set(draws.map(d => Number(d.number)));
+                const available = [];
+                for (let n = 1; n <= maxStudents; n++) {
+                    if (!takenSet.has(n)) available.push(n);
+                }
 
-                    // Update connection pill
-                    connectionBadge.className = "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
-                    connectionBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Live Sync Active</span>`;
+                if (available.length === 0) {
+                    throw new Error('SESSION_FULL');
+                }
 
-                    loadingView.classList.add('hidden');
+                // 3. Pick a random available number
+                const randomIndex = Math.floor(Math.random() * available.length);
+                const chosenNumber = available[randomIndex];
 
-                    if (isStudentMode) {
-                        setupStudentMode(querySessionId);
-                    } else {
-                        await setupTeacherMode();
-                    }
-                });
-            } catch (err) {
-                console.error("Firebase Initialization Error:", err);
-                loadingView.innerHTML = `<p class="text-rose-600 font-bold">Failed to connect to classroom service. Please refresh.</p>`;
+                const newEntry = {
+                    name: studentName,
+                    number: chosenNumber,
+                    clientToken: clientToken || ('t_' + Math.random().toString(36).slice(2, 10)),
+                    timestamp: Date.now()
+                };
+
+                const updatedPayload = {
+                    ...latestData,
+                    draws: [...draws, newEntry]
+                };
+
+                // 4. Write updated state back to cloud
+                await updateCloudSession(blobId, updatedPayload);
+
+                // 5. Immediately re-GET to verify our entry survived and wasn't overwritten by a simultaneous request
+                const verifiedData = await fetchCloudSession(blobId);
+                const verifiedDraws = Array.isArray(verifiedData.draws) ? verifiedData.draws : [];
+                const myVerifiedEntry = verifiedDraws.find(
+                    d => d.clientToken === newEntry.clientToken && Number(d.number) === chosenNumber
+                );
+
+                // Also ensure nobody else holds the exact same number with an earlier timestamp
+                const duplicatesForNum = verifiedDraws.filter(d => Number(d.number) === chosenNumber);
+
+                if (myVerifiedEntry && duplicatesForNum.length === 1) {
+                    return {
+                        number: chosenNumber,
+                        name: studentName,
+                        className: verifiedData.className,
+                        maxStudents: maxStudents
+                    };
+                }
+
+                // Collision detected! Wait a brief randomized jitter (80-220ms) and retry automatically
+                await new Promise(res => setTimeout(res, 80 + Math.floor(Math.random() * 140)));
+            }
+
+            throw new Error('CONCURRENCY_BUSY');
+        }
+
+        // ---------------------------------------------------------------------
+        // 3. BOOTSTRAP APPLICATION
+        // ---------------------------------------------------------------------
+        function initApp() {
+            loadingView.classList.add('hidden');
+            setConnectionStatus('connected', 'Cloud Ready');
+
+            if (isStudentMode) {
+                setupStudentMode(queryBlobId);
+            } else {
+                setupTeacherMode();
             }
         }
 
         // ---------------------------------------------------------------------
-        // 3. TEACHER DASHBOARD LOGIC
+        // 4. TEACHER DASHBOARD LOGIC
         // ---------------------------------------------------------------------
-        async function setupTeacherMode() {
+        function saveRecentSession(blobId, className, maxStudents) {
+            try {
+                const raw = localStorage.getItem(RECENT_SESSIONS_KEY);
+                let list = raw ? JSON.parse(raw) : [];
+                list = list.filter(item => item.blobId !== blobId);
+                list.unshift({ blobId, className, maxStudents, updatedAt: Date.now() });
+                list = list.slice(0, 6);
+                localStorage.setItem(RECENT_SESSIONS_KEY, JSON.stringify(list));
+                localStorage.setItem(ACTIVE_TEACHER_SESSION_KEY, blobId);
+            } catch (e) {}
+        }
+
+        function renderRecentSessionsList() {
+            const container = document.getElementById('recent-sessions-container');
+            const listEl = document.getElementById('recent-sessions-list');
+            try {
+                const raw = localStorage.getItem(RECENT_SESSIONS_KEY);
+                const list = raw ? JSON.parse(raw) : [];
+                if (!list.length) {
+                    container.classList.add('hidden');
+                    return;
+                }
+                container.classList.remove('hidden');
+                listEl.innerHTML = list.map(item => `
+                    <button type="button" data-blob-id="${escapeHtml(item.blobId)}"
+                        class="recent-session-btn w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition text-left">
+                        <div>
+                            <p class="font-bold text-slate-900 text-sm">${escapeHtml(item.className)}</p>
+                            <p class="text-xs text-slate-500">${item.maxStudents} students &bull; <span class="font-mono">${escapeHtml(item.blobId.slice(0, 8))}...</span></p>
+                        </div>
+                        <span class="text-xs font-bold text-indigo-600">Open &rarr;</span>
+                    </button>
+                `).join('');
+
+                listEl.querySelectorAll('.recent-session-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.getAttribute('data-blob-id');
+                        startTeacherSessionPolling(id);
+                    });
+                });
+            } catch (e) {
+                container.classList.add('hidden');
+            }
+        }
+
+        function setupTeacherMode() {
             teacherView.classList.remove('hidden');
             studentView.classList.add('hidden');
             toggleModeBtn.classList.add('hidden');
             document.getElementById('header-subtitle').textContent = 'Teacher Host Dashboard';
+
+            // Configure Public Base URL input (auto-detects Google Sites iframe vs GitHub Pages)
+            const publicUrlInput = document.getElementById('public-base-url-input');
+            publicUrlInput.value = getDefaultPublicBaseUrl();
+
+            if (isEmbeddedInSandbox()) {
+                document.getElementById('url-settings-panel').classList.remove('hidden');
+                document.getElementById('iframe-warning-note').innerHTML =
+                    `<strong class="text-indigo-700">Google Sites / Embed Detected:</strong> Your QR code is set to point directly to your public GitHub Pages URL above so students' phones open cleanly.`;
+            }
+
+            publicUrlInput.addEventListener('change', () => {
+                const val = publicUrlInput.value.trim();
+                if (val.startsWith('http')) {
+                    try { localStorage.setItem(PUBLIC_URL_STORAGE_KEY, val); } catch (e) {}
+                }
+            });
+
+            document.getElementById('toggle-url-settings-btn').addEventListener('click', () => {
+                const panel = document.getElementById('url-settings-panel');
+                const chevron = document.getElementById('url-settings-chevron');
+                panel.classList.toggle('hidden');
+                chevron.classList.toggle('fa-chevron-down');
+                chevron.classList.toggle('fa-chevron-up');
+            });
 
             // Update preview number as teacher types
             const countInput = document.getElementById('student-count-input');
@@ -492,77 +814,84 @@
                 previewMax.textContent = isNaN(val) || val < 1 ? '?' : val;
             });
 
-            // Check if teacher already has an active session saved in their private settings
-            try {
-                const pointerSnap = await getDoc(getTeacherPointerRef(currentUser.uid));
-                if (pointerSnap.exists() && pointerSnap.data().sessionId) {
-                    const savedId = pointerSnap.data().sessionId;
-                    const sessionSnap = await getDoc(getSessionDocRef(savedId));
-                    if (sessionSnap.exists()) {
-                        subscribeToTeacherSession(savedId);
-                        return;
-                    }
-                }
-            } catch (e) {
-                console.warn("Could not restore previous session:", e);
-            }
+            renderRecentSessionsList();
 
-            // Otherwise show setup panel
+            // Resume existing session form
+            document.getElementById('resume-session-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const rawVal = document.getElementById('resume-session-input').value.trim();
+                if (!rawVal) return;
+                // Allow pasting either the raw blob ID or a full ?blob=... URL
+                let extractedId = rawVal;
+                if (rawVal.includes('blob=')) {
+                    try {
+                        const parsed = new URL(rawVal);
+                        extractedId = parsed.searchParams.get('blob') || rawVal;
+                    } catch (err) {}
+                }
+                startTeacherSessionPolling(extractedId);
+            });
+
+            // Auto-restore active session if teacher reloads the page
+            try {
+                const activeBlob = localStorage.getItem(ACTIVE_TEACHER_SESSION_KEY);
+                if (activeBlob) {
+                    startTeacherSessionPolling(activeBlob);
+                    return;
+                }
+            } catch (e) {}
+
             document.getElementById('teacher-setup-panel').classList.remove('hidden');
             document.getElementById('teacher-live-panel').classList.add('hidden');
         }
 
-        // Create a brand new session in Firestore
+        // Create a brand new session in JSONBlob
         document.getElementById('create-session-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) return;
 
             const className = document.getElementById('class-name-input').value.trim() || 'Untitled Class';
-            const totalStudents = Math.min(150, Math.max(2, parseInt(document.getElementById('student-count-input').value, 10) || 16));
-            const btn = document.getElementById('create-session-btn');
+            const maxStudents = Math.min(100, Math.max(2, parseInt(document.getElementById('student-count-input').value, 10) || 16));
+            const publicUrl = document.getElementById('public-base-url-input').value.trim();
+            if (publicUrl.startsWith('http')) {
+                try { localStorage.setItem(PUBLIC_URL_STORAGE_KEY, publicUrl); } catch (err) {}
+            }
 
+            const btn = document.getElementById('create-session-btn');
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Creating Session...</span>`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Creating Cloud Session...</span>`;
 
             try {
-                const newSessionId = generateSessionId();
-                const availableNumbers = Array.from({ length: totalStudents }, (_, idx) => idx + 1);
-
                 const sessionPayload = {
-                    sessionId: newSessionId,
                     className: className,
-                    totalStudents: totalStudents,
-                    availableNumbers: availableNumbers,
-                    assignments: {}, // Map of "1": { name: "...", timestamp: 123456789 }
-                    createdAt: Date.now(),
-                    hostUid: currentUser.uid
+                    maxStudents: maxStudents,
+                    draws: [],
+                    createdAt: Date.now()
                 };
 
-                await setDoc(getSessionDocRef(newSessionId), sessionPayload);
-                await setDoc(getTeacherPointerRef(currentUser.uid), { sessionId: newSessionId, updatedAt: Date.now() });
-
+                const newBlobId = await createCloudSession(sessionPayload);
+                saveRecentSession(newBlobId, className, maxStudents);
                 showToast(`Session "${className}" launched!`, 'success');
-                subscribeToTeacherSession(newSessionId);
+                startTeacherSessionPolling(newBlobId);
             } catch (error) {
                 console.error("Error creating session:", error);
-                showToast("Could not create session. Please try again.", 'error');
+                showToast("Could not create cloud session. Check internet connection and try again.", 'error');
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i class="fa-solid fa-qrcode"></i><span>Launch Session & Generate QR Code</span>`;
             }
         });
 
-        // Subscribe to real-time updates for the active Teacher Session
-        function subscribeToTeacherSession(sessionId) {
-            if (unsubscribeSession) unsubscribeSession();
-            currentSessionId = sessionId;
+        // Start 2.5-second live polling loop for the Teacher Dashboard
+        function startTeacherSessionPolling(blobId) {
+            if (pollIntervalId) clearInterval(pollIntervalId);
+            currentBlobId = blobId;
 
             document.getElementById('teacher-setup-panel').classList.add('hidden');
             document.getElementById('teacher-live-panel').classList.remove('hidden');
 
-            // Generate QR Code & Links
-            const studentUrl = buildStudentUrl(sessionId);
-            document.getElementById('display-session-id').textContent = `ID: ${sessionId}`;
+            // Generate QR Code & Links pointing cleanly to the public GitHub Pages URL
+            const studentUrl = buildStudentUrl(blobId);
+            document.getElementById('display-session-id').textContent = `Session ID: ${blobId}`;
             document.getElementById('test-student-link').href = studentUrl;
             document.getElementById('share-url-hidden').value = studentUrl;
 
@@ -577,32 +906,118 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
 
-            // Listen to Firestore document changes in real time
-            unsubscribeSession = onSnapshot(
-                getSessionDocRef(sessionId),
-                (docSnap) => {
-                    if (!docSnap.exists()) {
-                        showToast("Session no longer exists.", 'error');
-                        document.getElementById('teacher-setup-panel').classList.remove('hidden');
+            const pollOnce = async () => {
+                if (isPolling || !currentBlobId) return;
+                isPolling = true;
+                try {
+                    const data = await fetchCloudSession(currentBlobId);
+                    currentSessionData = data;
+                    saveRecentSession(currentBlobId, data.className, data.maxStudents);
+                    renderTeacherBoard(data);
+                    setConnectionStatus('connected', 'Synced Live');
+                } catch (err) {
+                    console.error("Polling error:", err);
+                    if (err.message === 'SESSION_NOT_FOUND') {
+                        clearInterval(pollIntervalId);
+                        try { localStorage.removeItem(ACTIVE_TEACHER_SESSION_KEY); } catch (e) {}
+                        showToast("Session expired or not found.", 'error');
                         document.getElementById('teacher-live-panel').classList.add('hidden');
-                        return;
+                        document.getElementById('teacher-setup-panel').classList.remove('hidden');
+                    } else {
+                        setConnectionStatus('error', 'Retrying Sync...');
                     }
-                    currentSessionData = docSnap.data();
-                    renderTeacherBoard(currentSessionData);
-                },
-                (error) => {
-                    console.error("Teacher snapshot error:", error);
-                    showToast("Lost connection to live updates.", 'error');
+                } finally {
+                    isPolling = false;
                 }
-            );
+            };
+
+            // Immediate initial fetch + poll every 2.5 seconds
+            pollOnce();
+            pollIntervalId = setInterval(pollOnce, 2500);
         }
+
+        // Manual Refresh Button
+        document.getElementById('manual-refresh-btn').addEventListener('click', async () => {
+            if (!currentBlobId) return;
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('fa-spin');
+            try {
+                const data = await fetchCloudSession(currentBlobId);
+                currentSessionData = data;
+                renderTeacherBoard(data);
+                setConnectionStatus('connected', 'Synced Live');
+                showToast("Board refreshed!", 'info');
+            } catch (e) {
+                showToast("Refresh failed. Will retry automatically.", 'error');
+            } finally {
+                setTimeout(() => icon.classList.remove('fa-spin'), 400);
+            }
+        });
+
+        // Teacher Manual Add Student Drawer (for absent/no-phone students)
+        document.getElementById('teacher-manual-draw-btn').addEventListener('click', () => {
+            const drawer = document.getElementById('manual-draw-drawer');
+            drawer.classList.remove('hidden');
+            document.getElementById('manual-student-name').focus();
+        });
+
+        document.getElementById('manual-draw-cancel').addEventListener('click', () => {
+            document.getElementById('manual-draw-drawer').classList.add('hidden');
+        });
+
+        document.getElementById('manual-draw-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentBlobId) return;
+            const input = document.getElementById('manual-student-name');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const submitBtn = document.getElementById('manual-draw-submit');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Assigning...';
+
+            try {
+                const res = await claimRandomNumberSafely(currentBlobId, name, 'teacher_' + Date.now());
+                input.value = '';
+                document.getElementById('manual-draw-drawer').classList.add('hidden');
+                showToast(`Assigned #${res.number} to ${res.name}!`, 'success');
+                const updated = await fetchCloudSession(currentBlobId);
+                currentSessionData = updated;
+                renderTeacherBoard(updated);
+            } catch (err) {
+                if (err.message === 'SESSION_FULL') {
+                    showToast("All numbers are already claimed!", 'error');
+                } else {
+                    showToast("Could not assign number. Please try again.", 'error');
+                }
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Assign';
+            }
+        });
 
         // Render the Teacher's Live Board (Ordered Roster + Available Hat Pool)
         function renderTeacherBoard(data) {
-            const { className, totalStudents, availableNumbers = [], assignments = {} } = data;
+            const className = data.className || 'Class Session';
+            const totalStudents = data.maxStudents || 16;
+            const draws = Array.isArray(data.draws) ? data.draws : [];
+
             document.getElementById('live-class-title').textContent = className;
 
-            const claimedCount = Object.keys(assignments).length;
+            // Map draws by assigned number (1..N)
+            const byNumber = {};
+            draws.forEach(d => {
+                if (!byNumber[d.number]) {
+                    byNumber[d.number] = d;
+                }
+            });
+
+            const availableNumbers = [];
+            for (let i = 1; i <= totalStudents; i++) {
+                if (!byNumber[i]) availableNumbers.push(i);
+            }
+
+            const claimedCount = totalStudents - availableNumbers.length;
             const percentage = Math.round((claimedCount / totalStudents) * 100);
 
             document.getElementById('claimed-progress-text').textContent = `${claimedCount} / ${totalStudents}`;
@@ -619,9 +1034,8 @@
                     </div>
                 `;
             } else {
-                const sortedAvailable = [...availableNumbers].sort((a, b) => a - b);
-                poolGrid.innerHTML = sortedAvailable.map(num => `
-                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 font-extrabold text-sm shadow-2xs">
+                poolGrid.innerHTML = availableNumbers.map(num => `
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 font-extrabold text-sm">
                         ${num}
                     </span>
                 `).join('');
@@ -632,7 +1046,7 @@
             let rowsHtml = '';
 
             for (let i = 1; i <= totalStudents; i++) {
-                const entry = assignments[String(i)];
+                const entry = byNumber[i];
                 if (entry) {
                     const timeStr = entry.timestamp
                         ? new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -687,19 +1101,45 @@
             hiddenInput.classList.add('sr-only');
         });
 
-        // Reset / New Session Button
-        document.getElementById('reset-session-btn').addEventListener('click', async () => {
+        // Clear Draws in Current Session (keeps same QR code!)
+        document.getElementById('reset-draws-btn').addEventListener('click', async () => {
+            if (!currentBlobId || !currentSessionData) return;
             const confirmed = await showConfirm(
-                "Reset & Create New Session?",
-                "Your current session list will be replaced with a fresh sign-up board and a new QR code. Make sure you exported your CSV if you need a copy!",
-                "Create New Session"
+                "Clear All Drawn Numbers?",
+                "This keeps the same QR code on the board, but clears all student names so everyone can draw again.",
+                "Clear Draws"
             );
             if (!confirmed) return;
 
-            if (unsubscribeSession) unsubscribeSession();
-            currentSessionId = null;
-            currentSessionData = null;
+            try {
+                const clearedPayload = {
+                    ...currentSessionData,
+                    draws: []
+                };
+                await updateCloudSession(currentBlobId, clearedPayload);
+                currentSessionData = clearedPayload;
+                renderTeacherBoard(clearedPayload);
+                showToast("All draws cleared!", 'success');
+            } catch (err) {
+                showToast("Could not clear draws. Please try again.", 'error');
+            }
+        });
 
+        // Switch / Create New Class Session Button
+        document.getElementById('reset-session-btn').addEventListener('click', async () => {
+            const confirmed = await showConfirm(
+                "Switch or Create New Class?",
+                "You can return to this class anytime from the Recent Classes list. Make sure you exported your CSV if needed!",
+                "Switch Class"
+            );
+            if (!confirmed) return;
+
+            if (pollIntervalId) clearInterval(pollIntervalId);
+            currentBlobId = null;
+            currentSessionData = null;
+            try { localStorage.removeItem(ACTIVE_TEACHER_SESSION_KEY); } catch (e) {}
+
+            renderRecentSessionsList();
             document.getElementById('teacher-live-panel').classList.add('hidden');
             document.getElementById('teacher-setup-panel').classList.remove('hidden');
         });
@@ -707,14 +1147,19 @@
         // Export CSV Button
         document.getElementById('export-csv-btn').addEventListener('click', () => {
             if (!currentSessionData) return;
-            const { className, totalStudents, assignments = {} } = currentSessionData;
+            const className = currentSessionData.className || 'class-session';
+            const totalStudents = currentSessionData.maxStudents || 16;
+            const draws = Array.isArray(currentSessionData.draws) ? currentSessionData.draws : [];
+
+            const byNumber = {};
+            draws.forEach(d => { if (!byNumber[d.number]) byNumber[d.number] = d; });
 
             const rows = [
                 ['Order Number', 'Student Name', 'Status', 'Time Claimed']
             ];
 
             for (let i = 1; i <= totalStudents; i++) {
-                const entry = assignments[String(i)];
+                const entry = byNumber[i];
                 if (entry) {
                     const timeStr = entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : '';
                     rows.push([i, `"${entry.name.replace(/"/g, '""')}"`, 'Claimed', `"${timeStr}"`]);
@@ -737,96 +1182,119 @@
         });
 
         // ---------------------------------------------------------------------
-        // 4. STUDENT MOBILE VIEW LOGIC
+        // 5. STUDENT MOBILE VIEW LOGIC
         // ---------------------------------------------------------------------
-        function setupStudentMode(sessionId) {
+        function getOrCreateClientToken() {
+            const key = 'orderdraw_device_token_v1';
+            try {
+                let token = localStorage.getItem(key);
+                if (!token) {
+                    token = 'dev_' + Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
+                    localStorage.setItem(key, token);
+                }
+                return token;
+            } catch (e) {
+                return 'dev_' + Math.random().toString(36).slice(2, 11);
+            }
+        }
+
+        async function setupStudentMode(blobId) {
             teacherView.classList.add('hidden');
             studentView.classList.remove('hidden');
             toggleModeBtn.classList.remove('hidden');
             document.getElementById('header-subtitle').textContent = 'Student Sign-Up';
 
-            // Allow switching back to Teacher View cleanly if teacher opened test link
-            toggleModeBtn.addEventListener('click', () => {
+            // Allow switching back to Teacher View cleanly
+            const goHome = () => {
                 const baseUrl = new URL(window.location.href);
                 baseUrl.search = '';
                 window.location.href = baseUrl.toString();
+            };
+            toggleModeBtn.addEventListener('click', goHome);
+            document.getElementById('student-go-home-btn').addEventListener('click', goHome);
+
+            const storageKey = `orderdraw_claimed_${blobId}`;
+            const clientToken = getOrCreateClientToken();
+
+            // Shared device reset button
+            document.getElementById('student-reset-device-btn').addEventListener('click', async () => {
+                const ok = await showConfirm(
+                    "Draw for Another Student?",
+                    "Only use this if two students are sharing one phone. Your previous number remains saved on your teacher's board.",
+                    "Enter New Name"
+                );
+                if (!ok) return;
+                try {
+                    localStorage.removeItem(storageKey);
+                    localStorage.removeItem('orderdraw_device_token_v1');
+                } catch (e) {}
+                window.location.reload();
             });
 
-            document.getElementById('student-go-home-btn').addEventListener('click', () => {
-                const baseUrl = new URL(window.location.href);
-                baseUrl.search = '';
-                window.location.href = baseUrl.toString();
-            });
-
-            // Check if this student already drew a number for this exact session in localStorage
-            const storageKey = `orderdraw_assigned_${sessionId}`;
-            let savedAssignment = null;
+            // Load session state from cloud
+            setConnectionStatus('syncing', 'Loading Class...');
             try {
-                const raw = localStorage.getItem(storageKey);
-                if (raw) savedAssignment = JSON.parse(raw);
-            } catch (e) {
-                console.warn("localStorage unavailable:", e);
+                const data = await fetchCloudSession(blobId);
+                currentSessionData = data;
+                setConnectionStatus('connected', 'Connected');
+
+                const draws = Array.isArray(data.draws) ? data.draws : [];
+                const maxStudents = data.maxStudents || 16;
+
+                // 1. Check localStorage first
+                let savedAssignment = null;
+                try {
+                    const raw = localStorage.getItem(storageKey);
+                    if (raw) savedAssignment = JSON.parse(raw);
+                } catch (e) {}
+
+                if (savedAssignment) {
+                    // Confirm teacher didn't clear draws
+                    const stillValid = draws.find(
+                        d => Number(d.number) === Number(savedAssignment.number) && d.name === savedAssignment.name
+                    );
+                    if (stillValid) {
+                        renderStudentResult(data.className, savedAssignment.name, savedAssignment.number, maxStudents);
+                        return;
+                    } else {
+                        try { localStorage.removeItem(storageKey); } catch (e) {}
+                    }
+                }
+
+                // 2. Check if this device's clientToken already claimed a spot in the cloud
+                const cloudMatch = draws.find(d => d.clientToken === clientToken);
+                if (cloudMatch) {
+                    try {
+                        localStorage.setItem(storageKey, JSON.stringify({ name: cloudMatch.name, number: cloudMatch.number }));
+                    } catch (e) {}
+                    renderStudentResult(data.className, cloudMatch.name, cloudMatch.number, maxStudents);
+                    return;
+                }
+
+                // 3. Check if session is already full
+                const takenCount = new Set(draws.map(d => Number(d.number))).size;
+                const remaining = Math.max(0, maxStudents - takenCount);
+
+                if (remaining === 0) {
+                    document.getElementById('full-class-desc').textContent = `All ${maxStudents} numbers for "${data.className}" have already been claimed. Please check with your teacher.`;
+                    showStudentCard('student-full-card');
+                    return;
+                }
+
+                // 4. Show Name Entry Form
+                document.getElementById('student-class-title').textContent = data.className;
+                document.getElementById('student-spots-left').textContent = `${remaining} of ${maxStudents} numbers remaining`;
+                showStudentCard('student-form-card');
+
+            } catch (err) {
+                console.error("Student load error:", err);
+                setConnectionStatus('error', 'Not Found');
+                showStudentCard('student-invalid-card');
             }
 
-            // Listen to session document in real time
-            unsubscribeSession = onSnapshot(
-                getSessionDocRef(sessionId),
-                (docSnap) => {
-                    if (!docSnap.exists()) {
-                        showStudentCard('student-invalid-card');
-                        return;
-                    }
-
-                    const data = docSnap.data();
-                    currentSessionData = data;
-
-                    // Verify if localStorage saved assignment is still valid in Firestore
-                    if (savedAssignment && data.assignments && data.assignments[String(savedAssignment.number)]) {
-                        const serverEntry = data.assignments[String(savedAssignment.number)];
-                        if (serverEntry.name === savedAssignment.name) {
-                            renderStudentResult(data.className, savedAssignment.name, savedAssignment.number, data.totalStudents);
-                            return;
-                        }
-                    }
-
-                    // Also check if this anonymous user UID already claimed a number in this session
-                    if (data.assignments) {
-                        for (const [numStr, entry] of Object.entries(data.assignments)) {
-                            if (entry.uid === currentUser.uid) {
-                                const assignedNum = parseInt(numStr, 10);
-                                try {
-                                    localStorage.setItem(storageKey, JSON.stringify({ name: entry.name, number: assignedNum }));
-                                } catch (e) {}
-                                renderStudentResult(data.className, entry.name, assignedNum, data.totalStudents);
-                                return;
-                            }
-                        }
-                    }
-
-                    // Check if session is full
-                    const remaining = (data.availableNumbers || []).length;
-                    if (remaining === 0) {
-                        document.getElementById('full-class-desc').textContent = `All ${data.totalStudents} numbers for "${data.className}" have already been claimed. Please check with your teacher.`;
-                        showStudentCard('student-full-card');
-                        return;
-                    }
-
-                    // Otherwise show the Name Entry form
-                    document.getElementById('student-class-title').textContent = data.className;
-                    document.getElementById('student-spots-left').textContent = `${remaining} of ${data.totalStudents} numbers remaining`;
-                    showStudentCard('student-form-card');
-                },
-                (error) => {
-                    console.error("Student snapshot error:", error);
-                    showToast("Connection error. Please refresh.", 'error');
-                }
-            );
-
-            // Handle Student Form Submission using Atomic Firestore Transaction
+            // Handle Student Form Submission
             document.getElementById('student-draw-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                if (!currentUser) return;
-
                 const nameInput = document.getElementById('student-name-input');
                 const studentName = nameInput.value.trim();
                 if (!studentName) return;
@@ -836,83 +1304,25 @@
                 drawBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Drawing Number...</span>`;
 
                 try {
-                    const sessionRef = getSessionDocRef(sessionId);
+                    const activeToken = getOrCreateClientToken();
+                    const result = await claimRandomNumberSafely(blobId, studentName, activeToken);
 
-                    // Atomic transaction guarantees zero duplicate numbers even under simultaneous scans
-                    const result = await runTransaction(db, async (transaction) => {
-                        const sfDoc = await transaction.get(sessionRef);
-                        if (!sfDoc.exists()) {
-                            throw new Error("SESSION_NOT_FOUND");
-                        }
-
-                        const data = sfDoc.data();
-                        const available = [...(data.availableNumbers || [])];
-                        const assignments = { ...(data.assignments || {}) };
-
-                        // Guard: If this UID already claimed a number, return it
-                        for (const [numKey, entry] of Object.entries(assignments)) {
-                            if (entry.uid === currentUser.uid) {
-                                return {
-                                    number: parseInt(numKey, 10),
-                                    name: entry.name,
-                                    className: data.className,
-                                    totalStudents: data.totalStudents
-                                };
-                            }
-                        }
-
-                        if (available.length === 0) {
-                            throw new Error("SESSION_FULL");
-                        }
-
-                        // Pick a random index from the remaining pool
-                        const randomIndex = Math.floor(Math.random() * available.length);
-                        const chosenNumber = available[randomIndex];
-
-                        // Remove chosen number from available pool
-                        available.splice(randomIndex, 1);
-
-                        // Record assignment
-                        assignments[String(chosenNumber)] = {
-                            name: studentName,
-                            uid: currentUser.uid,
-                            timestamp: Date.now()
-                        };
-
-                        transaction.update(sessionRef, {
-                            availableNumbers: available,
-                            assignments: assignments
-                        });
-
-                        return {
-                            number: chosenNumber,
-                            name: studentName,
-                            className: data.className,
-                            totalStudents: data.totalStudents
-                        };
-                    });
-
-                    // Save to localStorage so accidental page refreshes remember their number
                     try {
                         localStorage.setItem(storageKey, JSON.stringify({
                             name: result.name,
                             number: result.number
                         }));
-                    } catch (e) {
-                        console.warn("Could not save to localStorage:", e);
-                    }
+                    } catch (e) {}
 
-                    // Show celebratory result + trigger confetti
-                    renderStudentResult(result.className, result.name, result.number, result.totalStudents, true);
-
+                    renderStudentResult(result.className, result.name, result.number, result.maxStudents, true);
                 } catch (err) {
-                    console.error("Transaction failed:", err);
-                    if (err.message === "SESSION_FULL") {
+                    console.error("Student draw failed:", err);
+                    if (err.message === 'SESSION_FULL') {
                         showStudentCard('student-full-card');
-                    } else if (err.message === "SESSION_NOT_FOUND") {
+                    } else if (err.message === 'SESSION_NOT_FOUND') {
                         showStudentCard('student-invalid-card');
                     } else {
-                        showToast("Could not claim a number. Please try tapping again!", 'error');
+                        showToast("Busy right now—please tap 'Draw My Number' again!", 'error');
                     }
                 } finally {
                     drawBtn.disabled = false;
