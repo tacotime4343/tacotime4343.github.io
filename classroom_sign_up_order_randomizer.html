@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Sign-Up Order Randomizer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- QRCode.js for client-side QR generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- Canvas Confetti for celebratory student number reveal -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Font Awesome for clean icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.08); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        /* Ensure QR code canvas/img centers cleanly and stays crisp */
+        #qrcode img, #qrcode canvas {
+            margin: 0 auto;
+            display: block;
+            border-radius: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col selection:bg-indigo-600 selection:text-white">
+
+    <!-- Top Navigation / Status Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-sm">
+                    #1
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-900 leading-tight">OrderDraw</h1>
+                    <p class="text-xs text-slate-500 font-medium" id="header-subtitle">Classroom Queue Randomizer</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- Connection Status Pill -->
+                <div id="connection-badge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span>Connecting...</span>
+                </div>
+
+                <!-- Mode Switcher (Helpful for testing or switching back to Teacher View) -->
+                <button id="toggle-mode-btn" class="hidden text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 transition shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-chalkboard-user text-indigo-600"></i>
+                    <span>Teacher View</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Custom Toast / Notification Banner (Replaces alert) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Custom Confirmation Modal (Replaces confirm) -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-pop-in">
+            <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xl mb-4">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 id="confirm-title" class="text-xl font-bold text-slate-900 mb-2">Start New Session?</h3>
+            <p id="confirm-message" class="text-slate-600 text-sm mb-6">This will close the current sign-up session and generate a fresh QR code for a new class.</p>
+            <div class="flex items-center justify-end gap-3">
+                <button id="confirm-cancel-btn" class="px-4 py-2.5 rounded-xl font-semibold text-slate-700 hover:bg-slate-100 transition">Cancel</button>
+                <button id="confirm-ok-btn" class="px-5 py-2.5 rounded-xl font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition">Yes, Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <main id="loading-view" class="flex-1 flex flex-col items-center justify-center p-6">
+        <div class="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+        <p class="text-slate-600 font-semibold text-lg">Initializing classroom session...</p>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 1: TEACHER DASHBOARD (HOST VIEW)                                 -->
+    <!-- ===================================================================== -->
+    <main id="teacher-view" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        
+        <!-- Setup Card (Shown when no active session exists or teacher clicks New Session) -->
+        <section id="teacher-setup-panel" class="max-w-xl mx-auto bg-white rounded-3xl shadow-lg border border-slate-200 p-6 sm:p-10 mt-4">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl mb-6">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">Create Sign-Up Session</h2>
+            <p class="text-slate-600 mb-8">Generate a QR code for your students to scan and randomly draw their project sign-up number.</p>
+
+            <form id="create-session-form" class="space-y-6">
+                <div>
+                    <label for="class-name-input" class="block text-sm font-bold text-slate-700 mb-2">Class / Block Name</label>
+                    <input type="text" id="class-name-input" required placeholder="e.g., First Block - Biology" value="First Block"
+                        class="w-full px-4 py-3.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none transition text-lg">
+                </div>
+
+                <div>
+                    <label for="student-count-input" class="block text-sm font-bold text-slate-700 mb-2">Number of Students (1 to N)</label>
+                    <div class="flex items-center gap-4">
+                        <input type="number" id="student-count-input" required min="2" max="150" value="16"
+                            class="w-32 px-4 py-3.5 rounded-xl border border-slate-300 text-slate-900 font-bold focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none transition text-xl text-center">
+                        <span class="text-sm text-slate-500 font-medium">Generates random numbers <strong class="text-slate-800">1</strong> through <strong id="preview-max-num" class="text-slate-800">16</strong></span>
+                    </div>
+                </div>
+
+                <button type="submit" id="create-session-btn"
+                    class="w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-lg shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>Launch Session & Generate QR Code</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Active Live Session Dashboard -->
+        <section id="teacher-live-panel" class="hidden space-y-6">
+            
+            <!-- Top Control Banner -->
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2.5 mb-1">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                            LIVE SESSION
+                        </span>
+                        <span class="text-xs font-mono text-slate-400" id="display-session-id">ID: ---</span>
+                    </div>
+                    <h2 id="live-class-title" class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">First Block</h2>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-3">
+                    <button id="export-csv-btn" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-file-csv"></i>
+                        <span>Export CSV</span>
+                    </button>
+                    <button id="reset-session-btn" class="px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-semibold text-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>Reset / New Session</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main 2-Column Grid: Left = QR Code Projector Card, Right = Live Results & Pool -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Left Column: Scannable QR Code (5 cols on desktop) -->
+                <div class="lg:col-span-5 bg-white rounded-3xl shadow-md border border-slate-200 p-6 sm:p-8 flex flex-col items-center text-center">
+                    <span class="px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs uppercase tracking-wider mb-3">
+                        Scan with Phone Camera
+                    </span>
+                    <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900 mb-2">Draw Your Sign-Up Number</h3>
+                    <p class="text-sm text-slate-500 mb-6 max-w-xs">Point your device camera at the QR code below to claim your random spot in line.</p>
+
+                    <!-- High-contrast QR Code Container -->
+                    <div class="p-5 bg-white rounded-3xl border-4 border-slate-900 shadow-inner mb-6 inline-block">
+                        <div id="qrcode" class="w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center"></div>
+                    </div>
+
+                    <!-- Progress Counter -->
+                    <div class="w-full bg-slate-100 rounded-2xl p-4 mb-5">
+                        <div class="flex justify-between text-sm font-bold mb-2">
+                            <span class="text-slate-600">Numbers Claimed</span>
+                            <span id="claimed-progress-text" class="text-indigo-600">0 / 16</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
+                            <div id="claimed-progress-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Action Links: Copy Link & Test Student View -->
+                    <div class="w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button id="copy-link-btn" class="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-sm">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>Copy Link</span>
+                        </button>
+                        <a id="test-student-link" href="#" target="_blank" rel="noopener noreferrer"
+                            class="w-full py-3 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold text-sm transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-mobile-screen-button"></i>
+                            <span>Student View (Test)</span>
+                        </a>
+                    </div>
+                    <!-- Hidden input fallback for reliable clipboard copy -->
+                    <input type="text" id="share-url-hidden" class="sr-only" readonly>
+                </div>
+
+                <!-- Right Column: Available Numbers Pool & Ordered Sign-Up List (7 cols on desktop) -->
+                <div class="lg:col-span-7 space-y-6">
+                    
+                    <!-- Available Numbers Pool -->
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                                <i class="fa-solid fa-hat-wizard text-indigo-600"></i>
+                                <span>Remaining Numbers in Hat</span>
+                            </h3>
+                            <span id="remaining-count-badge" class="px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-bold text-xs">16 Left</span>
+                        </div>
+                        <div id="available-pool-grid" class="flex flex-wrap gap-2">
+                            <!-- Number pills injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Ordered Sign-Up List (1 to N) -->
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-extrabold text-slate-900">Ordered Sign-Up Roster</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Updates automatically in real time as students scan</p>
+                            </div>
+                            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Order 1 &rarr; N</span>
+                        </div>
+
+                        <div id="ordered-roster-list" class="divide-y divide-slate-100 max-h-[540px] overflow-y-auto">
+                            <!-- Roster rows injected dynamically -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 2: STUDENT MOBILE VIEW (TRIGGERED BY ?session=...)               -->
+    <!-- ===================================================================== -->
+    <main id="student-view" class="hidden flex-1 flex items-center justify-center p-4 sm:p-6">
+        <div class="max-w-md w-full">
+            
+            <!-- Error / Invalid Session Card -->
+            <div id="student-invalid-card" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200 p-8 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-3xl mx-auto mb-4">
+                    <i class="fa-solid fa-circle-xmark"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Session Not Found</h2>
+                <p class="text-slate-600 mb-6">This QR code link may have expired or the teacher started a new session. Please scan the current QR code on the board.</p>
+                <button id="student-go-home-btn" class="w-full py-3.5 px-6 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition">
+                    Go to Teacher Dashboard
+                </button>
+            </div>
+
+            <!-- Step 1: Student Name Entry Form -->
+            <div id="student-form-card" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200 p-6 sm:p-8">
+                <div class="text-center mb-6">
+                    <span class="inline-block px-3.5 py-1 rounded-full bg-indigo-50 text-indigo-700 font-bold text-xs uppercase tracking-wider mb-3">
+                        Project Sign-Up Order
+                    </span>
+                    <h2 id="student-class-title" class="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">First Block</h2>
+                    <p id="student-spots-left" class="text-sm font-medium text-slate-500 mt-2">Checking available spots...</p>
+                </div>
+
+                <form id="student-draw-form" class="space-y-5">
+                    <div>
+                        <label for="student-name-input" class="block text-sm font-bold text-slate-700 mb-2">Enter Your Full Name</label>
+                        <input type="text" id="student-name-input" required autocomplete="name" maxlength="60" placeholder="e.g., Jordan Taylor"
+                            class="w-full px-4 py-4 rounded-2xl border-2 border-slate-200 text-slate-900 font-semibold text-lg focus:border-indigo-600 focus:ring-4 focus:ring-indigo-500/15 outline-none transition">
+                    </div>
+
+                    <button type="submit" id="draw-number-btn"
+                        class="w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-extrabold text-lg shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-ticket"></i>
+                        <span>Draw My Number</span>
+                    </button>
+                </form>
+
+                <p class="text-xs text-center text-slate-400 mt-5">
+                    You will receive one random number. Keep this screen open to show your teacher!
+                </p>
+            </div>
+
+            <!-- Step 2: Celebratory Assigned Number Reveal Card -->
+            <div id="student-result-card" class="hidden bg-white rounded-3xl shadow-xl border-2 border-indigo-600 p-8 text-center animate-pop-in">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs uppercase tracking-wider mb-4">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Spot Reserved</span>
+                </div>
+
+                <p id="result-class-name" class="text-sm font-bold text-slate-500 uppercase tracking-wide mb-1">First Block</p>
+                <h2 id="result-student-name" class="text-2xl font-extrabold text-slate-900 mb-6">Jordan Taylor</h2>
+
+                <div class="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-8 text-white shadow-lg shadow-indigo-600/25 mb-6">
+                    <p class="text-indigo-200 font-bold text-xs uppercase tracking-widest mb-1">Your Sign-Up Number</p>
+                    <div id="result-number-display" class="text-7xl sm:text-8xl font-black tracking-tighter leading-none my-2">
+                        #4
+                    </div>
+                    <p id="result-total-context" class="text-indigo-200 text-xs font-medium mt-2">out of 16 students</p>
+                </div>
+
+                <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 text-sm text-slate-600">
+                    <p class="font-semibold text-slate-800 mb-0.5">You're all set!</p>
+                    <p class="text-xs">Your number is saved on this device and displayed live on your teacher's screen.</p>
+                </div>
+            </div>
+
+            <!-- Step 3: Session Full Card -->
+            <div id="student-full-card" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200 p-8 text-center">
+                <div class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mx-auto mb-4">
+                    <i class="fa-solid fa-users-slash"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-slate-900 mb-2">All Numbers Claimed!</h2>
+                <p id="full-class-desc" class="text-slate-600 mb-6">All sign-up numbers for this session have already been drawn. Please let your teacher know if you still need a number.</p>
+                <div class="inline-block px-4 py-2 rounded-xl bg-slate-100 text-slate-600 text-xs font-semibold">
+                    Session Full
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Firebase Modular SDK Imports & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ---------------------------------------------------------------------
+        // 1. ENVIRONMENT & FIREBASE INITIALIZATION
+        // ---------------------------------------------------------------------
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'classroom-order-draw';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        let app, auth, db;
+        let currentUser = null;
+        let unsubscribeSession = null;
+        let currentSessionId = null;
+        let currentSessionData = null;
+
+        // Parse URL Query Parameters (?session=xyz)
+        const urlParams = new URLSearchParams(window.location.search);
+        const querySessionId = urlParams.get('session');
+        const isStudentMode = Boolean(querySessionId);
+
+        // DOM Elements
+        const loadingView = document.getElementById('loading-view');
+        const teacherView = document.getElementById('teacher-view');
+        const studentView = document.getElementById('student-view');
+        const connectionBadge = document.getElementById('connection-badge');
+        const toggleModeBtn = document.getElementById('toggle-mode-btn');
+
+        // Helper: Show non-blocking Toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const styles = {
+                success: 'bg-emerald-900 text-white border-emerald-700',
+                error: 'bg-rose-900 text-white border-rose-700',
+                info: 'bg-slate-900 text-white border-slate-700'
+            };
+            const icons = {
+                success: 'fa-circle-check text-emerald-400',
+                error: 'fa-circle-exclamation text-rose-400',
+                info: 'fa-circle-info text-indigo-400'
+            };
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-xl border text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${styles[type] || styles.info}`;
+            toast.innerHTML = `<i class="fa-solid ${icons[type] || icons.info} text-base"></i><span>${message}</span>`;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Helper: Custom Confirmation Dialog
+        function showConfirm(title, message, okLabel = 'Confirm') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('confirm-modal');
+                document.getElementById('confirm-title').textContent = title;
+                document.getElementById('confirm-message').textContent = message;
+                const okBtn = document.getElementById('confirm-ok-btn');
+                const cancelBtn = document.getElementById('confirm-cancel-btn');
+                okBtn.textContent = okLabel;
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                const cleanup = (result) => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                    okBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    resolve(result);
+                };
+
+                okBtn.onclick = () => cleanup(true);
+                cancelBtn.onclick = () => cleanup(false);
+            });
+        }
+
+        // Helper: Firestore Document Reference (Follows strict public artifact path rule)
+        function getSessionDocRef(sessionId) {
+            return doc(db, 'artifacts', appId, 'public', 'data', 'signup_sessions', sessionId);
+        }
+
+        // Helper: Teacher active session pointer reference (so refreshing Teacher View restores their active board)
+        function getTeacherPointerRef(userId) {
+            return doc(db, 'artifacts', appId, 'users', userId, 'settings', 'active_session');
+        }
+
+        // Generate a short, clean, URL-friendly Session ID
+        function generateSessionId() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // Build Student Share URL cleanly without duplicating query params
+        function buildStudentUrl(sessionId) {
+            const url = new URL(window.location.href);
+            url.search = `?session=${encodeURIComponent(sessionId)}`;
+            url.hash = '';
+            return url.toString();
+        }
+
+        // ---------------------------------------------------------------------
+        // 2. AUTHENTICATION & BOOTSTRAP
+        // ---------------------------------------------------------------------
+        async function initApp() {
+            if (!firebaseConfig) {
+                loadingView.innerHTML = `<p class="text-rose-600 font-bold">Configuration Error: Firebase config not found.</p>`;
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // Sign in first (Custom Token if provided, otherwise Anonymous Auth)
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (!user) return;
+                    currentUser = user;
+
+                    // Update connection pill
+                    connectionBadge.className = "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200";
+                    connectionBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Live Sync Active</span>`;
+
+                    loadingView.classList.add('hidden');
+
+                    if (isStudentMode) {
+                        setupStudentMode(querySessionId);
+                    } else {
+                        await setupTeacherMode();
+                    }
+                });
+            } catch (err) {
+                console.error("Firebase Initialization Error:", err);
+                loadingView.innerHTML = `<p class="text-rose-600 font-bold">Failed to connect to classroom service. Please refresh.</p>`;
+            }
+        }
+
+        // ---------------------------------------------------------------------
+        // 3. TEACHER DASHBOARD LOGIC
+        // ---------------------------------------------------------------------
+        async function setupTeacherMode() {
+            teacherView.classList.remove('hidden');
+            studentView.classList.add('hidden');
+            toggleModeBtn.classList.add('hidden');
+            document.getElementById('header-subtitle').textContent = 'Teacher Host Dashboard';
+
+            // Update preview number as teacher types
+            const countInput = document.getElementById('student-count-input');
+            const previewMax = document.getElementById('preview-max-num');
+            countInput.addEventListener('input', () => {
+                const val = parseInt(countInput.value, 10);
+                previewMax.textContent = isNaN(val) || val < 1 ? '?' : val;
+            });
+
+            // Check if teacher already has an active session saved in their private settings
+            try {
+                const pointerSnap = await getDoc(getTeacherPointerRef(currentUser.uid));
+                if (pointerSnap.exists() && pointerSnap.data().sessionId) {
+                    const savedId = pointerSnap.data().sessionId;
+                    const sessionSnap = await getDoc(getSessionDocRef(savedId));
+                    if (sessionSnap.exists()) {
+                        subscribeToTeacherSession(savedId);
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn("Could not restore previous session:", e);
+            }
+
+            // Otherwise show setup panel
+            document.getElementById('teacher-setup-panel').classList.remove('hidden');
+            document.getElementById('teacher-live-panel').classList.add('hidden');
+        }
+
+        // Create a brand new session in Firestore
+        document.getElementById('create-session-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const className = document.getElementById('class-name-input').value.trim() || 'Untitled Class';
+            const totalStudents = Math.min(150, Math.max(2, parseInt(document.getElementById('student-count-input').value, 10) || 16));
+            const btn = document.getElementById('create-session-btn');
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Creating Session...</span>`;
+
+            try {
+                const newSessionId = generateSessionId();
+                const availableNumbers = Array.from({ length: totalStudents }, (_, idx) => idx + 1);
+
+                const sessionPayload = {
+                    sessionId: newSessionId,
+                    className: className,
+                    totalStudents: totalStudents,
+                    availableNumbers: availableNumbers,
+                    assignments: {}, // Map of "1": { name: "...", timestamp: 123456789 }
+                    createdAt: Date.now(),
+                    hostUid: currentUser.uid
+                };
+
+                await setDoc(getSessionDocRef(newSessionId), sessionPayload);
+                await setDoc(getTeacherPointerRef(currentUser.uid), { sessionId: newSessionId, updatedAt: Date.now() });
+
+                showToast(`Session "${className}" launched!`, 'success');
+                subscribeToTeacherSession(newSessionId);
+            } catch (error) {
+                console.error("Error creating session:", error);
+                showToast("Could not create session. Please try again.", 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-qrcode"></i><span>Launch Session & Generate QR Code</span>`;
+            }
+        });
+
+        // Subscribe to real-time updates for the active Teacher Session
+        function subscribeToTeacherSession(sessionId) {
+            if (unsubscribeSession) unsubscribeSession();
+            currentSessionId = sessionId;
+
+            document.getElementById('teacher-setup-panel').classList.add('hidden');
+            document.getElementById('teacher-live-panel').classList.remove('hidden');
+
+            // Generate QR Code & Links
+            const studentUrl = buildStudentUrl(sessionId);
+            document.getElementById('display-session-id').textContent = `ID: ${sessionId}`;
+            document.getElementById('test-student-link').href = studentUrl;
+            document.getElementById('share-url-hidden').value = studentUrl;
+
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: studentUrl,
+                width: 240,
+                height: 240,
+                colorDark: "#0f172a",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Listen to Firestore document changes in real time
+            unsubscribeSession = onSnapshot(
+                getSessionDocRef(sessionId),
+                (docSnap) => {
+                    if (!docSnap.exists()) {
+                        showToast("Session no longer exists.", 'error');
+                        document.getElementById('teacher-setup-panel').classList.remove('hidden');
+                        document.getElementById('teacher-live-panel').classList.add('hidden');
+                        return;
+                    }
+                    currentSessionData = docSnap.data();
+                    renderTeacherBoard(currentSessionData);
+                },
+                (error) => {
+                    console.error("Teacher snapshot error:", error);
+                    showToast("Lost connection to live updates.", 'error');
+                }
+            );
+        }
+
+        // Render the Teacher's Live Board (Ordered Roster + Available Hat Pool)
+        function renderTeacherBoard(data) {
+            const { className, totalStudents, availableNumbers = [], assignments = {} } = data;
+            document.getElementById('live-class-title').textContent = className;
+
+            const claimedCount = Object.keys(assignments).length;
+            const percentage = Math.round((claimedCount / totalStudents) * 100);
+
+            document.getElementById('claimed-progress-text').textContent = `${claimedCount} / ${totalStudents}`;
+            document.getElementById('claimed-progress-bar').style.width = `${percentage}%`;
+            document.getElementById('remaining-count-badge').textContent = `${availableNumbers.length} Left`;
+
+            // 1. Render Available Numbers Pool
+            const poolGrid = document.getElementById('available-pool-grid');
+            if (availableNumbers.length === 0) {
+                poolGrid.innerHTML = `
+                    <div class="w-full py-3 px-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-semibold flex items-center gap-2">
+                        <i class="fa-solid fa-check-double"></i>
+                        <span>All ${totalStudents} numbers have been drawn!</span>
+                    </div>
+                `;
+            } else {
+                const sortedAvailable = [...availableNumbers].sort((a, b) => a - b);
+                poolGrid.innerHTML = sortedAvailable.map(num => `
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 font-extrabold text-sm shadow-2xs">
+                        ${num}
+                    </span>
+                `).join('');
+            }
+
+            // 2. Render Ordered Sign-Up List (1 to N)
+            const rosterList = document.getElementById('ordered-roster-list');
+            let rowsHtml = '';
+
+            for (let i = 1; i <= totalStudents; i++) {
+                const entry = assignments[String(i)];
+                if (entry) {
+                    const timeStr = entry.timestamp
+                        ? new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                        : '';
+                    rowsHtml += `
+                        <div class="flex items-center justify-between px-6 py-3.5 bg-white hover:bg-slate-50/80 transition">
+                            <div class="flex items-center gap-4 min-w-0">
+                                <span class="w-10 h-10 rounded-xl bg-indigo-600 text-white font-black text-base flex items-center justify-center shrink-0 shadow-sm">
+                                    ${i}
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="font-bold text-slate-900 text-base sm:text-lg truncate">${escapeHtml(entry.name)}</p>
+                                    <p class="text-xs text-slate-400">Claimed at ${timeStr}</p>
+                                </div>
+                            </div>
+                            <span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs shrink-0">
+                                Assigned
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    rowsHtml += `
+                        <div class="flex items-center justify-between px-6 py-3.5 bg-slate-50/40">
+                            <div class="flex items-center gap-4">
+                                <span class="w-10 h-10 rounded-xl bg-slate-200/70 text-slate-500 font-bold text-base flex items-center justify-center shrink-0">
+                                    ${i}
+                                </span>
+                                <span class="text-slate-400 font-medium italic text-sm sm:text-base">Unclaimed</span>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-400 font-semibold text-xs">
+                                Open
+                            </span>
+                        </div>
+                    `;
+                }
+            }
+            rosterList.innerHTML = rowsHtml;
+        }
+
+        // Copy Student Link Button (Uses document.execCommand fallback for iframe safety)
+        document.getElementById('copy-link-btn').addEventListener('click', () => {
+            const hiddenInput = document.getElementById('share-url-hidden');
+            hiddenInput.classList.remove('sr-only');
+            hiddenInput.select();
+            hiddenInput.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                showToast("Student sign-up link copied to clipboard!", 'success');
+            } catch (err) {
+                showToast("Could not copy link automatically.", 'error');
+            }
+            hiddenInput.classList.add('sr-only');
+        });
+
+        // Reset / New Session Button
+        document.getElementById('reset-session-btn').addEventListener('click', async () => {
+            const confirmed = await showConfirm(
+                "Reset & Create New Session?",
+                "Your current session list will be replaced with a fresh sign-up board and a new QR code. Make sure you exported your CSV if you need a copy!",
+                "Create New Session"
+            );
+            if (!confirmed) return;
+
+            if (unsubscribeSession) unsubscribeSession();
+            currentSessionId = null;
+            currentSessionData = null;
+
+            document.getElementById('teacher-live-panel').classList.add('hidden');
+            document.getElementById('teacher-setup-panel').classList.remove('hidden');
+        });
+
+        // Export CSV Button
+        document.getElementById('export-csv-btn').addEventListener('click', () => {
+            if (!currentSessionData) return;
+            const { className, totalStudents, assignments = {} } = currentSessionData;
+
+            const rows = [
+                ['Order Number', 'Student Name', 'Status', 'Time Claimed']
+            ];
+
+            for (let i = 1; i <= totalStudents; i++) {
+                const entry = assignments[String(i)];
+                if (entry) {
+                    const timeStr = entry.timestamp ? new Date(entry.timestamp).toLocaleTimeString() : '';
+                    rows.push([i, `"${entry.name.replace(/"/g, '""')}"`, 'Claimed', `"${timeStr}"`]);
+                } else {
+                    rows.push([i, 'Unclaimed', 'Open', '']);
+                }
+            }
+
+            const csvContent = "data:text/csv;charset=utf-8," + rows.map(r => r.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            const safeFileName = className.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${safeFileName}-signup-order.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast("CSV downloaded!", 'success');
+        });
+
+        // ---------------------------------------------------------------------
+        // 4. STUDENT MOBILE VIEW LOGIC
+        // ---------------------------------------------------------------------
+        function setupStudentMode(sessionId) {
+            teacherView.classList.add('hidden');
+            studentView.classList.remove('hidden');
+            toggleModeBtn.classList.remove('hidden');
+            document.getElementById('header-subtitle').textContent = 'Student Sign-Up';
+
+            // Allow switching back to Teacher View cleanly if teacher opened test link
+            toggleModeBtn.addEventListener('click', () => {
+                const baseUrl = new URL(window.location.href);
+                baseUrl.search = '';
+                window.location.href = baseUrl.toString();
+            });
+
+            document.getElementById('student-go-home-btn').addEventListener('click', () => {
+                const baseUrl = new URL(window.location.href);
+                baseUrl.search = '';
+                window.location.href = baseUrl.toString();
+            });
+
+            // Check if this student already drew a number for this exact session in localStorage
+            const storageKey = `orderdraw_assigned_${sessionId}`;
+            let savedAssignment = null;
+            try {
+                const raw = localStorage.getItem(storageKey);
+                if (raw) savedAssignment = JSON.parse(raw);
+            } catch (e) {
+                console.warn("localStorage unavailable:", e);
+            }
+
+            // Listen to session document in real time
+            unsubscribeSession = onSnapshot(
+                getSessionDocRef(sessionId),
+                (docSnap) => {
+                    if (!docSnap.exists()) {
+                        showStudentCard('student-invalid-card');
+                        return;
+                    }
+
+                    const data = docSnap.data();
+                    currentSessionData = data;
+
+                    // Verify if localStorage saved assignment is still valid in Firestore
+                    if (savedAssignment && data.assignments && data.assignments[String(savedAssignment.number)]) {
+                        const serverEntry = data.assignments[String(savedAssignment.number)];
+                        if (serverEntry.name === savedAssignment.name) {
+                            renderStudentResult(data.className, savedAssignment.name, savedAssignment.number, data.totalStudents);
+                            return;
+                        }
+                    }
+
+                    // Also check if this anonymous user UID already claimed a number in this session
+                    if (data.assignments) {
+                        for (const [numStr, entry] of Object.entries(data.assignments)) {
+                            if (entry.uid === currentUser.uid) {
+                                const assignedNum = parseInt(numStr, 10);
+                                try {
+                                    localStorage.setItem(storageKey, JSON.stringify({ name: entry.name, number: assignedNum }));
+                                } catch (e) {}
+                                renderStudentResult(data.className, entry.name, assignedNum, data.totalStudents);
+                                return;
+                            }
+                        }
+                    }
+
+                    // Check if session is full
+                    const remaining = (data.availableNumbers || []).length;
+                    if (remaining === 0) {
+                        document.getElementById('full-class-desc').textContent = `All ${data.totalStudents} numbers for "${data.className}" have already been claimed. Please check with your teacher.`;
+                        showStudentCard('student-full-card');
+                        return;
+                    }
+
+                    // Otherwise show the Name Entry form
+                    document.getElementById('student-class-title').textContent = data.className;
+                    document.getElementById('student-spots-left').textContent = `${remaining} of ${data.totalStudents} numbers remaining`;
+                    showStudentCard('student-form-card');
+                },
+                (error) => {
+                    console.error("Student snapshot error:", error);
+                    showToast("Connection error. Please refresh.", 'error');
+                }
+            );
+
+            // Handle Student Form Submission using Atomic Firestore Transaction
+            document.getElementById('student-draw-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!currentUser) return;
+
+                const nameInput = document.getElementById('student-name-input');
+                const studentName = nameInput.value.trim();
+                if (!studentName) return;
+
+                const drawBtn = document.getElementById('draw-number-btn');
+                drawBtn.disabled = true;
+                drawBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Drawing Number...</span>`;
+
+                try {
+                    const sessionRef = getSessionDocRef(sessionId);
+
+                    // Atomic transaction guarantees zero duplicate numbers even under simultaneous scans
+                    const result = await runTransaction(db, async (transaction) => {
+                        const sfDoc = await transaction.get(sessionRef);
+                        if (!sfDoc.exists()) {
+                            throw new Error("SESSION_NOT_FOUND");
+                        }
+
+                        const data = sfDoc.data();
+                        const available = [...(data.availableNumbers || [])];
+                        const assignments = { ...(data.assignments || {}) };
+
+                        // Guard: If this UID already claimed a number, return it
+                        for (const [numKey, entry] of Object.entries(assignments)) {
+                            if (entry.uid === currentUser.uid) {
+                                return {
+                                    number: parseInt(numKey, 10),
+                                    name: entry.name,
+                                    className: data.className,
+                                    totalStudents: data.totalStudents
+                                };
+                            }
+                        }
+
+                        if (available.length === 0) {
+                            throw new Error("SESSION_FULL");
+                        }
+
+                        // Pick a random index from the remaining pool
+                        const randomIndex = Math.floor(Math.random() * available.length);
+                        const chosenNumber = available[randomIndex];
+
+                        // Remove chosen number from available pool
+                        available.splice(randomIndex, 1);
+
+                        // Record assignment
+                        assignments[String(chosenNumber)] = {
+                            name: studentName,
+                            uid: currentUser.uid,
+                            timestamp: Date.now()
+                        };
+
+                        transaction.update(sessionRef, {
+                            availableNumbers: available,
+                            assignments: assignments
+                        });
+
+                        return {
+                            number: chosenNumber,
+                            name: studentName,
+                            className: data.className,
+                            totalStudents: data.totalStudents
+                        };
+                    });
+
+                    // Save to localStorage so accidental page refreshes remember their number
+                    try {
+                        localStorage.setItem(storageKey, JSON.stringify({
+                            name: result.name,
+                            number: result.number
+                        }));
+                    } catch (e) {
+                        console.warn("Could not save to localStorage:", e);
+                    }
+
+                    // Show celebratory result + trigger confetti
+                    renderStudentResult(result.className, result.name, result.number, result.totalStudents, true);
+
+                } catch (err) {
+                    console.error("Transaction failed:", err);
+                    if (err.message === "SESSION_FULL") {
+                        showStudentCard('student-full-card');
+                    } else if (err.message === "SESSION_NOT_FOUND") {
+                        showStudentCard('student-invalid-card');
+                    } else {
+                        showToast("Could not claim a number. Please try tapping again!", 'error');
+                    }
+                } finally {
+                    drawBtn.disabled = false;
+                    drawBtn.innerHTML = `<i class="fa-solid fa-ticket"></i><span>Draw My Number</span>`;
+                }
+            });
+        }
+
+        function showStudentCard(cardId) {
+            ['student-invalid-card', 'student-form-card', 'student-result-card', 'student-full-card'].forEach(id => {
+                const el = document.getElementById(id);
+                if (id === cardId) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+        }
+
+        function renderStudentResult(className, studentName, number, totalStudents, celebrate = false) {
+            document.getElementById('result-class-name').textContent = className;
+            document.getElementById('result-student-name').textContent = studentName;
+            document.getElementById('result-number-display').textContent = `#${number}`;
+            document.getElementById('result-total-context').textContent = `out of ${totalStudents} students`;
+
+            showStudentCard('student-result-card');
+
+            if (celebrate && typeof confetti === 'function') {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        // Escape HTML to prevent XSS from student-entered names
+        function escapeHtml(unsafe) {
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Start Application on Window Load
+        window.addEventListener('load', initApp);
+    </script>
+</body>
+</html>
