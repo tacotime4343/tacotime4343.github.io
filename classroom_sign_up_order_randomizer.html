@@ -6,9 +6,9 @@
 <!-- ... existing code ... -->
             <div class="flex items-center gap-3">
                 <!-- Live Cloud Connection Status Pill -->
-                <div id="connection-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                    <span>Database Setup Needed</span>
+                <div id="connection-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>Firebase Ready</span>
                 </div>
 
                 <!-- Mode Switcher (Visible in Student View to return to Teacher Host) -->
@@ -20,32 +20,6 @@
             <p class="text-slate-600 mb-6 text-sm sm:text-base">Generate a QR code for your students to scan and randomly draw their unique project sign-up number.</p>
 
             <form id="create-session-form" class="space-y-5">
-                <!-- Step 1: Google Firebase Realtime Database URL -->
-                <div class="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-2.5">
-                    <div class="flex items-center justify-between">
-                        <label for="firebase-db-url-input" class="block text-xs font-extrabold uppercase tracking-wider text-indigo-900">
-                            <i class="fa-solid fa-database mr-1.5 text-indigo-600"></i>Google Firebase Database URL
-                        </label>
-                        <button type="button" id="toggle-fb-help-btn" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline">
-                            How to get this (60 sec)
-                        </button>
-                    </div>
-                    <input type="url" id="firebase-db-url-input" required placeholder="https://your-project-default-rtdb.firebaseio.com"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-indigo-200 bg-white text-slate-900 font-mono text-xs focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none">
-                    <p class="text-[11px] text-slate-600">Saved automatically in this browser so you only paste it once. Automatically included inside your QR code for students!</p>
-
-                    <!-- Collapsible 4-step Firebase setup guide -->
-                    <div id="fb-help-box" class="hidden pt-2 border-t border-indigo-200/80 text-xs text-slate-700 space-y-1.5 leading-relaxed">
-                        <p class="font-bold text-slate-900">Quick 1-Time Setup (Free with your Google Account):</p>
-                        <ol class="list-decimal list-inside space-y-1">
-                            <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer" class="text-indigo-600 font-semibold underline">console.firebase.google.com</a> and click <strong>Create a project</strong>.</li>
-                            <li>In the left menu, click <strong>Build &rarr; Realtime Database</strong>, then click <strong>Create Database</strong>.</li>
-                            <li>Choose <strong>Start in test mode</strong> and click <strong>Enable</strong>.</li>
-                            <li>Copy the URL shown at the top of the Data tab (starts with <code class="bg-white px-1 py-0.5 rounded border border-slate-200">https://...firebaseio.com</code>) and paste it above!</li>
-                        </ol>
-                    </div>
-                </div>
-
                 <div>
                     <label for="class-name-input" class="block text-sm font-bold text-slate-700 mb-2">Class / Block Name</label>
                     <input type="text" id="class-name-input" required placeholder="e.g., First Block" value="First Block"
@@ -144,15 +118,15 @@
         // 1. CONSTANTS, URL DETECTION & STORAGE KEYS
         // ---------------------------------------------------------------------
         const DEFAULT_GITHUB_URL = "https://tacotime4343.github.io/classroom_sign_up_order_randomizer/";
+        const HARDCODED_FIREBASE_DB_URL = "https://orderdraw-default-rtdb.firebaseio.com";
         const STORAGE_PUBLIC_URL_KEY = "orderdraw_public_base_url";
-        const STORAGE_FIREBASE_URL_KEY = "orderdraw_firebase_rtdb_url";
         const STORAGE_TEACHER_SESSION_KEY = "orderdraw_active_fb_session_v1";
         const STORAGE_CLIENT_ID_KEY = "orderdraw_student_browser_id";
 
         const urlParams = new URLSearchParams(window.location.search);
         const sessionParam = urlParams.get('s');
-        const dbParam = urlParams.get('db');
-        const isStudentMode = Boolean(sessionParam && dbParam);
+        const dbParam = urlParams.get('db') || HARDCODED_FIREBASE_DB_URL;
+        const isStudentMode = Boolean(sessionParam);
 
         // DOM References
         const teacherView = document.getElementById('teacher-view');
@@ -180,8 +154,8 @@
         // 2. HELPER UTILITIES (FIREBASE URL NORMALIZER, TOASTS, MODALS, URLS)
         // ---------------------------------------------------------------------
         function normalizeFirebaseDbUrl(rawUrl) {
-            let cleaned = (rawUrl || '').trim();
-            if (!cleaned) return '';
+            let cleaned = (rawUrl || HARDCODED_FIREBASE_DB_URL).trim();
+            if (!cleaned) return HARDCODED_FIREBASE_DB_URL;
             if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
                 cleaned = 'https://' + cleaned;
             }
@@ -279,16 +253,16 @@
         }
 
         function buildStudentShareUrl(sessionId, dbUrl) {
+        function buildStudentShareUrl(sessionId) {
             const baseInput = document.getElementById('public-base-url-input');
             let baseUrl = (baseInput ? baseInput.value.trim() : '') || detectDefaultPublicBaseUrl();
             try {
                 const urlObj = new URL(baseUrl);
                 urlObj.searchParams.set('s', sessionId);
-                urlObj.searchParams.set('db', normalizeFirebaseDbUrl(dbUrl));
                 return urlObj.toString();
             } catch (e) {
                 const cleanBase = baseUrl.split('?')[0];
-                return `${cleanBase}?s=${encodeURIComponent(sessionId)}&db=${encodeURIComponent(normalizeFirebaseDbUrl(dbUrl))}`;
+                return `${cleanBase}?s=${encodeURIComponent(sessionId)}`;
             }
         }
 
@@ -447,30 +421,7 @@
             previewMaxNum.textContent = (!isNaN(val) && val >= 2 && val <= 100) ? val : 'N';
         });
 
-        // Toggle Firebase 60-sec setup instructions
-        document.getElementById('toggle-fb-help-btn').addEventListener('click', () => {
-            document.getElementById('fb-help-box').classList.toggle('hidden');
-        });
-
-        // Initialize saved Firebase URL & Public Student URL inputs
-        const firebaseUrlInput = document.getElementById('firebase-db-url-input');
-        try {
-            const savedFbUrl = localStorage.getItem(STORAGE_FIREBASE_URL_KEY);
-            if (savedFbUrl) {
-                firebaseUrlInput.value = savedFbUrl;
-                updateConnectionBadge('ready', 'Firebase URL Saved');
-            }
-        } catch (e) {}
-
-        firebaseUrlInput.addEventListener('change', () => {
-            const norm = normalizeFirebaseDbUrl(firebaseUrlInput.value);
-            firebaseUrlInput.value = norm;
-            if (norm) {
-                try { localStorage.setItem(STORAGE_FIREBASE_URL_KEY, norm); } catch (e) {}
-                updateConnectionBadge('ready', 'Firebase URL Saved');
-            }
-        });
-
+        // Initialize Public Student URL input
         const publicBaseUrlInput = document.getElementById('public-base-url-input');
         publicBaseUrlInput.value = detectDefaultPublicBaseUrl();
         publicBaseUrlInput.addEventListener('change', () => {
@@ -489,16 +440,10 @@
         document.getElementById('create-session-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const dbUrl = normalizeFirebaseDbUrl(firebaseUrlInput.value);
+            const dbUrl = normalizeFirebaseDbUrl(HARDCODED_FIREBASE_DB_URL);
             const className = document.getElementById('class-name-input').value.trim();
             const totalStudents = parseInt(studentCountInput.value, 10);
 
-            if (!dbUrl || !dbUrl.includes('firebaseio.com')) {
-                showToast('Please enter a valid Firebase Realtime Database URL (https://...firebaseio.com).', 'error');
-                document.getElementById('fb-help-box').classList.remove('hidden');
-                firebaseUrlInput.focus();
-                return;
-            }
             if (!className) {
                 showToast('Please enter a class or block name.', 'error');
                 return;
@@ -509,7 +454,6 @@
             }
 
             try {
-                localStorage.setItem(STORAGE_FIREBASE_URL_KEY, dbUrl);
                 localStorage.setItem(STORAGE_PUBLIC_URL_KEY, publicBaseUrlInput.value.trim());
             } catch (err) {}
 
@@ -543,8 +487,7 @@
             } catch (err) {
                 console.error('Firebase create error:', err);
                 updateConnectionBadge('error', 'Firebase Connection Error');
-                showToast(err.message || 'Could not write to Firebase. Ensure Test Mode is enabled.', 'error');
-                document.getElementById('fb-help-box').classList.remove('hidden');
+                showToast(err.message || 'Could not write to Firebase. Ensure Test Mode is enabled in Firebase Console.', 'error');
             } finally {
                 createBtn.disabled = false;
                 createBtn.innerHTML = `<i class="fa-solid fa-qrcode"></i><span>Launch Session & Generate QR Code</span>`;
@@ -553,7 +496,7 @@
 
         function renderTeacherQrCodes() {
             if (!activeTeacherMeta) return;
-            const shareUrl = buildStudentShareUrl(activeTeacherMeta.sessionId, activeTeacherMeta.dbUrl);
+            const shareUrl = buildStudentShareUrl(activeTeacherMeta.sessionId);
             document.getElementById('share-url-hidden').value = shareUrl;
             document.getElementById('test-student-link').href = shareUrl;
 
