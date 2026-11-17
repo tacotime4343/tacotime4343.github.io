@@ -1,101 +1,176 @@
-<!-- ... existing code ... -->
-    <!-- QRCode.js for crisp client-side QR generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <!-- Canvas Confetti for celebratory student number reveal -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<!-- ... existing code ... -->
-            <div class="flex items-center gap-3">
-                <!-- Live Cloud Connection Status Pill -->
-                <div id="connection-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>Firebase Ready</span>
-                </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign-Up Order Randomizer</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+@keyframes popIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.animate-pop-in{animation:popIn .25s ease-out}
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col text-slate-800">
+<header class="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center"><i class="fa-solid fa-ticket"></i></div>
+    <div><h1 class="font-extrabold leading-tight">Order Draw</h1><p id="header-subtitle" class="text-xs text-slate-500">Teacher Dashboard</p></div>
+  </div>
+  <div class="flex items-center gap-3">
+    <div id="connection-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Firebase Ready</span></div>
+    <button id="toggle-mode-btn" class="hidden text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200">Teacher View</button>
+  </div>
+</header>
 
-                <!-- Mode Switcher (Visible in Student View to return to Teacher Host) -->
-<!-- ... existing code ... -->
-            <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl mb-6">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
-            </div>
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">Create Sign-Up Session</h2>
-            <p class="text-slate-600 mb-6 text-sm sm:text-base">Generate a QR code for your students to scan and randomly draw their unique project sign-up number.</p>
-
-            <form id="create-session-form" class="space-y-5">
-                <div>
-                    <label for="class-name-input" class="block text-sm font-bold text-slate-700 mb-2">Class / Block Name</label>
-                    <input type="text" id="class-name-input" required placeholder="e.g., First Block" value="First Block"
-                        class="w-full px-4 py-3.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none transition text-lg">
-                </div>
-
-                <div>
-                    <label for="student-count-input" class="block text-sm font-bold text-slate-700 mb-2">Number of Students (1 to N)</label>
-                    <div class="flex items-center gap-4">
-                        <input type="number" id="student-count-input" required min="2" max="100" value="16"
-                            class="w-28 px-4 py-3.5 rounded-xl border border-slate-300 text-slate-900 font-bold focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none transition text-xl text-center">
-                        <span class="text-sm text-slate-500 font-medium">Generates numbers <strong class="text-slate-800">1</strong> through <strong id="preview-max-num" class="text-slate-800">16</strong></span>
-                    </div>
-                </div>
-
-                <button type="submit" id="create-session-btn"
-                    class="w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-bold text-lg shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-3">
-                    <i class="fa-solid fa-qrcode"></i>
-                    <span>Launch Session & Generate QR Code</span>
-                </button>
-            </form>
-        </section>
-
-        <!-- Active Live Session Dashboard -->
-<!-- ... existing code ... -->
-                    <div class="flex flex-wrap items-center gap-2.5 mb-1">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                            LIVE FIREBASE SYNC
-                        </span>
-                        <span class="text-xs font-mono text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md" id="display-room-code">Session: ---</span>
-                    </div>
-                    <h2 id="live-class-title" class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">First Block</h2>
-                </div>
-<!-- ... existing code ... -->
-            <p class="text-xs font-mono text-slate-400" id="modal-room-code">Session: ---</p>
+<!-- TEACHER VIEW -->
+<main id="teacher-view" class="hidden flex-1 p-4 sm:p-6 max-w-5xl w-full mx-auto">
+  <section id="teacher-setup-panel" class="max-w-xl mx-auto bg-white rounded-3xl shadow-xl border border-slate-200 p-6 sm:p-8">
+    <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl mb-6"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+    <h2 class="text-2xl sm:text-3xl font-extrabold mb-2">Create Sign-Up Session</h2>
+    <p class="text-slate-600 mb-6 text-sm sm:text-base">Generate a QR code for your students to scan and randomly draw their unique sign-up number.</p>
+    <form id="create-session-form" class="space-y-5">
+      <div>
+        <label for="class-name-input" class="block text-sm font-bold mb-2">Class / Block Name</label>
+        <input type="text" id="class-name-input" required value="First Block" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 font-medium focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none text-lg">
+      </div>
+      <div>
+        <label for="student-count-input" class="block text-sm font-bold mb-2">Number of Students (1 to N)</label>
+        <div class="flex items-center gap-4">
+          <input type="number" id="student-count-input" required min="2" max="100" value="16" class="w-28 px-4 py-3.5 rounded-xl border border-slate-300 font-bold focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none text-xl text-center">
+          <span class="text-sm text-slate-500 font-medium">Numbers <strong>1</strong> through <strong id="preview-max-num">16</strong></span>
         </div>
+        <div class="flex gap-2 mt-3">
+          <span class="text-xs text-slate-500 self-center">Quick sizes:</span>
+          <button type="button" data-size="10" class="size-preset px-3 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-sm font-bold">10</button>
+          <button type="button" data-size="16" class="size-preset px-3 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-sm font-bold">16</button>
+          <button type="button" data-size="20" class="size-preset px-3 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-sm font-bold">20</button>
+          <button type="button" data-size="25" class="size-preset px-3 py-1 rounded-lg bg-slate-100 hover:bg-indigo-100 text-sm font-bold">25</button>
+        </div>
+      </div>
+      <button type="submit" id="create-session-btn" class="w-full py-4 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg shadow-lg flex items-center justify-center gap-3"><i class="fa-solid fa-qrcode"></i><span>Launch Session & Generate QR Code</span></button>
+    </form>
+  </section>
+
+  <section id="teacher-live-panel" class="hidden grid lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-1 space-y-4">
+      <div class="bg-white rounded-3xl shadow border border-slate-200 p-5 text-center">
+        <div class="flex flex-wrap justify-center items-center gap-2 mb-2">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>LIVE</span>
+          <span id="display-room-code" class="text-xs font-mono text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md">Session: ---</span>
+        </div>
+        <h2 id="live-class-title" class="text-2xl font-black mb-4">First Block</h2>
+        <div class="flex justify-center mb-4"><div id="qrcode" class="p-3 bg-white rounded-xl border"></div></div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="enlarge-qr-btn" class="py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold"><i class="fa-solid fa-expand mr-1"></i>Enlarge QR</button>
+          <button id="copy-link-btn" class="py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-sm font-bold"><i class="fa-solid fa-link mr-1"></i>Copy Link</button>
+        </div>
+        <input id="share-url-hidden" class="sr-only" readonly>
+        <a id="test-student-link" target="_blank" class="block mt-3 text-xs text-indigo-600 font-semibold hover:underline">Open student view (test)</a>
+      </div>
+      <div class="bg-white rounded-3xl shadow border border-slate-200 p-5">
+        <div class="flex justify-between text-sm font-bold mb-2"><span>Claimed</span><span id="claimed-progress-text">0 / 0</span></div>
+        <div class="h-3 bg-slate-100 rounded-full overflow-hidden"><div id="claimed-progress-bar" class="h-full bg-indigo-600 transition-all" style="width:0%"></div></div>
+        <div class="flex justify-between items-center mt-4 mb-2"><span class="text-sm font-bold">Numbers in the hat</span><span id="remaining-count-badge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">0 Left</span></div>
+        <div id="available-pool-grid" class="flex flex-wrap gap-1.5"></div>
+      </div>
+      <div class="grid grid-cols-1 gap-2">
+        <button id="open-manual-draw-btn" class="py-2.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-sm font-bold"><i class="fa-solid fa-user-plus mr-1"></i>Manual Draw (no phone)</button>
+        <button id="export-csv-btn" class="py-2.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-sm font-bold"><i class="fa-solid fa-file-csv mr-1"></i>Export CSV</button>
+        <button id="reset-session-btn" class="py-2.5 rounded-xl bg-rose-50 border border-rose-200 hover:bg-rose-100 text-rose-700 text-sm font-bold"><i class="fa-solid fa-rotate-left mr-1"></i>End &amp; Reset Session</button>
+      </div>
     </div>
+    <div class="lg:col-span-2 bg-white rounded-3xl shadow border border-slate-200 overflow-hidden self-start">
+      <div class="px-6 py-4 border-b border-slate-200 font-extrabold">Sign-Up Order</div>
+      <div id="ordered-roster-list" class="divide-y divide-slate-100"></div>
+    </div>
+  </section>
+</main>
 
-    <!-- Manual Draw Modal (For students without a phone or dead battery) -->
-<!-- ... existing code ... -->
-    <!-- ===================================================================== -->
-    <!-- VIEW 2: STUDENT CLIENT VIEW (TRIGGERED BY ?s=<sessionId>&db=<url>)    -->
-    <!-- ===================================================================== -->
-    <main id="student-view" class="hidden flex-1 flex items-center justify-center p-4 sm:p-6">
-        <div class="max-w-md w-full">
+<!-- QR ZOOM MODAL -->
+<div id="qr-zoom-modal" class="hidden fixed inset-0 z-40 bg-slate-900/80 items-center justify-center p-4">
+  <div class="bg-white rounded-3xl p-8 text-center max-w-sm w-full relative">
+    <button id="close-qr-modal-btn" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-2xl">&times;</button>
+    <h3 id="modal-class-title" class="text-2xl font-black mb-1">Class</h3>
+    <p class="text-sm text-slate-500 mb-4">Scan to draw your number</p>
+    <div class="flex justify-center mb-4"><div id="modal-qrcode"></div></div>
+    <p id="modal-room-code" class="text-xs font-mono text-slate-400">Session: ---</p>
+  </div>
+</div>
 
-            <!-- Step 0: Connecting to Firebase Card -->
-            <div id="student-connecting-card" class="bg-white rounded-3xl shadow-xl border border-slate-200 p-8 text-center">
-                <div class="w-14 h-14 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-5"></div>
-                <h2 class="text-xl font-extrabold text-slate-900 mb-2">Loading Sign-Up Session...</h2>
-                <p id="student-connect-status" class="text-sm text-slate-500">Connecting to Google Firebase...</p>
-            </div>
+<!-- MANUAL DRAW MODAL -->
+<div id="manual-draw-modal" class="hidden fixed inset-0 z-40 bg-slate-900/60 items-center justify-center p-4">
+  <form id="manual-draw-form" class="bg-white rounded-3xl p-6 max-w-sm w-full relative space-y-4">
+    <button type="button" id="manual-close-btn" class="absolute top-3 right-4 text-slate-400 hover:text-slate-700 text-2xl">&times;</button>
+    <h3 class="text-xl font-extrabold">Manual Draw</h3>
+    <input id="manual-student-name" required placeholder="Student name" class="w-full px-4 py-3 rounded-xl border border-slate-300 outline-none focus:border-indigo-600">
+    <div class="flex gap-2">
+      <button type="button" id="manual-cancel-btn" class="flex-1 py-2.5 rounded-xl bg-slate-100 font-bold">Cancel</button>
+      <button type="submit" class="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white font-bold">Draw</button>
+    </div>
+  </form>
+</div>
 
-            <!-- Error / Session Not Found Card -->
-            <div id="student-invalid-card" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200 p-8 text-center">
-                <div class="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-3xl mx-auto mb-4">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                </div>
-                <h2 class="text-2xl font-extrabold text-slate-900 mb-2">Session Not Found</h2>
-                <p id="student-error-desc" class="text-slate-600 text-sm mb-6">Could not load this sign-up session. Check your connection or scan the QR code again.</p>
-                <div class="space-y-3">
-                    <button id="student-retry-btn" class="w-full py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-sm">
-                        <i class="fa-solid fa-rotate-right mr-2"></i>Try Again
-                    </button>
-                    <button id="student-go-home-btn" class="w-full py-3 px-6 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">
-                        Open Teacher Dashboard
-                    </button>
-                </div>
-            </div>
+<!-- CONFIRM MODAL -->
+<div id="confirm-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 items-center justify-center p-4">
+  <div class="bg-white rounded-3xl p-6 max-w-sm w-full">
+    <h3 id="confirm-title" class="text-xl font-extrabold mb-2">Confirm</h3>
+    <p id="confirm-message" class="text-slate-600 text-sm mb-5"></p>
+    <div class="flex gap-2">
+      <button id="confirm-cancel-btn" class="flex-1 py-2.5 rounded-xl bg-slate-100 font-bold">Cancel</button>
+      <button id="confirm-ok-btn" class="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold">Confirm</button>
+    </div>
+  </div>
+</div>
 
-            <!-- Step 1: Student Name Entry Form -->
-<!-- ... existing code ... -->
-    <!-- ===================================================================== -->
-    <!-- APPLICATION LOGIC (GOOGLE FIREBASE REALTIME DATABASE REST + ETAG)     -->
-    <!-- ===================================================================== -->
+<div id="toast-container" class="fixed bottom-4 left-0 right-0 z-50 flex flex-col items-center gap-2 pointer-events-none px-4"></div>
+
+<!-- STUDENT VIEW -->
+<main id="student-view" class="hidden flex-1">
+ <div class="flex items-center justify-center p-4 sm:p-6 min-h-[70vh]">
+  <div class="max-w-md w-full">
+    <div id="student-connecting-card" class="bg-white rounded-3xl shadow-xl border border-slate-200 p-8 text-center">
+      <div class="w-14 h-14 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-5"></div>
+      <h2 class="text-xl font-extrabold mb-2">Loading Sign-Up Session...</h2>
+      <p id="student-connect-status" class="text-sm text-slate-500">Connecting to Google Firebase...</p>
+    </div>
+    <div id="student-invalid-card" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200 p-8 text-center">
+      <div class="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-3xl mx-auto mb-4"><i class="fa-solid fa-circle-exclamation"></i></div>
+      <h2 class="text-2xl font-extrabold mb-2">Session Not Found</h2>
+      <p id="student-error-desc" class="text-slate-600 text-sm mb-6">Could not load this sign-up session.</p>
+      <div class="space-y-3">
+        <button id="student-retry-btn" class="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold"><i class="fa-solid fa-rotate-right mr-2"></i>Try Again</button>
+        <button id="student-go-home-btn" class="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm">Open Teacher Dashboard</button>
+      </div>
+    </div>
+    <div id="student-form-card" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200 p-8">
+      <p class="text-xs font-bold text-indigo-600 uppercase tracking-wide mb-1">Number Draw</p>
+      <h2 id="student-class-title" class="text-3xl font-black mb-1">Class</h2>
+      <p id="student-spots-left" class="text-sm text-slate-500 mb-6"></p>
+      <form id="student-draw-form" class="space-y-4">
+        <input id="student-name-input" required maxlength="40" placeholder="Your first name" class="w-full px-4 py-3.5 rounded-xl border border-slate-300 text-lg outline-none focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-600">
+        <button type="submit" id="draw-number-btn" class="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-lg shadow-lg flex items-center justify-center gap-3"><i class="fa-solid fa-ticket"></i><span>Draw My Number</span></button>
+      </form>
+    </div>
+    <div id="student-result-card" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200 p-8 text-center animate-pop-in">
+      <p id="result-class-name" class="text-sm font-bold text-indigo-600 mb-1"></p>
+      <p class="text-slate-500 text-sm">Your number,</p>
+      <h2 id="result-student-name" class="text-2xl font-black mb-4"></h2>
+      <div id="result-number-display" class="text-8xl font-black text-indigo-600 mb-2">#</div>
+      <p id="result-total-context" class="text-sm text-slate-500"></p>
+      <p class="text-xs text-slate-400 mt-6">Screenshot this or remember your number!</p>
+    </div>
+    <div id="student-full-card" class="hidden bg-white rounded-3xl shadow-xl border border-slate-200 p-8 text-center">
+      <div class="w-16 h-16 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-3xl mx-auto mb-4"><i class="fa-solid fa-hourglass-end"></i></div>
+      <h2 class="text-2xl font-extrabold mb-2">All Numbers Drawn</h2>
+      <p id="full-class-desc" class="text-slate-600 text-sm">All numbers have been drawn.</p>
+    </div>
+  </div>
+ </div>
+</main>
+
     <script>
         // ---------------------------------------------------------------------
         // 1. CONSTANTS, URL DETECTION & STORAGE KEYS
@@ -877,6 +952,13 @@
                 }
             }
         })();
+            // Quick class-size preset buttons
+        document.querySelectorAll('.size-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                studentCountInput.value = btn.dataset.size;
+                studentCountInput.dispatchEvent(new Event('input'));
+            });
+        });
     </script>
 </body>
 </html>
